@@ -2,6 +2,7 @@ package gcs
 
 import (
 	"context"
+	"time"
 
 	"github.com/tweag/credential-helper/api"
 	"golang.org/x/oauth2"
@@ -28,7 +29,12 @@ func (g *GCS) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCr
 	if err != nil {
 		return api.GetCredentialsResponse{}, err
 	}
+	var expires string
+	if !token.Expiry.IsZero() {
+		expires = token.Expiry.UTC().Format(time.RFC3339)
+	}
 	return api.GetCredentialsResponse{
+		Expires: expires,
 		Headers: map[string][]string{
 			"Authorization": {"Bearer " + token.AccessToken},
 		},
