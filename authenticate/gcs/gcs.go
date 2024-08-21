@@ -2,6 +2,8 @@ package gcs
 
 import (
 	"context"
+	"errors"
+	"net/url"
 	"time"
 
 	"github.com/tweag/credential-helper/api"
@@ -25,6 +27,19 @@ func New(ctx context.Context) (*GCS, error) {
 //
 // https://github.com/EngFlow/credential-helper-spec/blob/main/spec.md#get
 func (g *GCS) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
+	parsedURL, error := url.Parse(req.URI)
+	if error != nil {
+		return api.GetCredentialsResponse{}, error
+	}
+
+	if parsedURL.Scheme != "https" {
+		return api.GetCredentialsResponse{}, errors.New("only https is supported")
+	}
+
+	if parsedURL.Host != "storage.googleapis.com" {
+		return api.GetCredentialsResponse{}, errors.New("only storage.googleapis.com is supported")
+	}
+
 	token, err := g.tokenSource.Token()
 	if err != nil {
 		return api.GetCredentialsResponse{}, err
