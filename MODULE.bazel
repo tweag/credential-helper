@@ -16,5 +16,6 @@ use_repo(
     go_deps,
     "com_github_aws_aws_sdk_go_v2",
     "com_github_aws_aws_sdk_go_v2_config",
+    "io_k8s_sigs_yaml",
     "org_golang_x_oauth2",
 )

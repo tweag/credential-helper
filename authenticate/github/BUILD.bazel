@@ -1,0 +1,13 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "github",
+    srcs = ["github.go"],
+    importpath = "github.com/tweag/credential-helper/authenticate/github",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "@io_k8s_sigs_yaml//:yaml",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

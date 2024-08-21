@@ -13,6 +13,7 @@ import (
 	"github.com/tweag/credential-helper/agent"
 	"github.com/tweag/credential-helper/api"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
+	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
 	authenticateS3 "github.com/tweag/credential-helper/authenticate/s3"
 	"github.com/tweag/credential-helper/cache"
@@ -32,6 +33,10 @@ func chooseHelper(ctx context.Context, rawURL string) (api.Getter, error) {
 		return authenticateS3.New(ctx)
 	case strings.EqualFold(u.Host, "storage.googleapis.com"):
 		return authenticateGCS.New(ctx)
+	case strings.EqualFold(u.Host, "github.com"):
+		fallthrough
+	case strings.EqualFold(u.Host, "objects.githubusercontent.com"):
+		return authenticateGitHub.New(ctx)
 	default:
 		fmt.Fprintln(os.Stderr, "no matching credential helper found - returning empty response")
 		return authenticateNull.Null{}, nil

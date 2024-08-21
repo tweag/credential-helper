@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.27
 	github.com/bazelbuild/rules_go v0.49.0
 	golang.org/x/oauth2 v0.22.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (

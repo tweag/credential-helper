@@ -9,6 +9,7 @@ go_library(
         "//agent",
         "//api",
         "//authenticate/gcs",
+        "//authenticate/github",
         "//authenticate/null",
         "//authenticate/s3",
         "//cache",
