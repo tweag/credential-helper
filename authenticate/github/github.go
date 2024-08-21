@@ -139,6 +139,11 @@ func (g *GitHubTokenSource) Token() (*oauth2.Token, error) {
 	return &oauth2.Token{
 		AccessToken: g.token,
 		// TODO: guess or check the expiry time
+		// this can be done by sending an authenticated request to
+		// https://api.github.com/rate_limit
+		// and checking for the response header
+		// github-authentication-token-expiration
+		// but does not work for all kinds of tokens
 		// TODO: add method to reload token from disk
 	}, nil
 }
