@@ -49,11 +49,13 @@ func (g *GitHub) Get(ctx context.Context, req api.GetCredentialsRequest) (api.Ge
 		return api.GetCredentialsResponse{}, errors.New("only https is supported")
 	}
 
-	switch strings.ToLower(parsedURL.Host) {
-	case "github.com", "objects.githubusercontent.com":
+	switch {
+	case strings.EqualFold(parsedURL.Host, "github.com"):
+		// this is fine
+	case strings.HasSuffix(strings.ToLower(parsedURL.Host), ".github.com"):
 		// this is fine
 	default:
-		return api.GetCredentialsResponse{}, errors.New("only github.com and objects.githubusercontent.com are supported")
+		return api.GetCredentialsResponse{}, errors.New("only github.com and subdomains are supported")
 	}
 
 	token, err := g.tokenSource.Token()

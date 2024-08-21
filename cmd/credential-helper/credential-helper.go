@@ -35,7 +35,7 @@ func chooseHelper(ctx context.Context, rawURL string) (api.Getter, error) {
 		return authenticateGCS.New(ctx)
 	case strings.EqualFold(u.Host, "github.com"):
 		fallthrough
-	case strings.EqualFold(u.Host, "objects.githubusercontent.com"):
+	case strings.HasSuffix(strings.ToLower(u.Host), ".github.com"):
 		return authenticateGitHub.New(ctx)
 	default:
 		fmt.Fprintln(os.Stderr, "no matching credential helper found - returning empty response")
