@@ -1,2 +1,4 @@
 agent.pid
 agent.sock
+bazel-*
+MODULE.bazel.lock

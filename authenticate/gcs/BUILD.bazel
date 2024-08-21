@@ -1,0 +1,13 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gcs",
+    srcs = ["gcs.go"],
+    importpath = "github.com/tweag/credential-helper/authenticate/gcs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//google",
+    ],
+)

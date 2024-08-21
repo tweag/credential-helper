@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "agent",
+    srcs = [
+        "client.go",
+        "service.go",
+    ],
+    importpath = "github.com/tweag/credential-helper/agent",
+    visibility = ["//visibility:public"],
+    deps = ["//api"],
+)

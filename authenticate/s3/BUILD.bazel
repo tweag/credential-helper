@@ -1,0 +1,14 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "s3",
+    srcs = ["s3.go"],
+    importpath = "github.com/tweag/credential-helper/authenticate/s3",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "@com_github_aws_aws_sdk_go_v2//aws",
+        "@com_github_aws_aws_sdk_go_v2//aws/signer/v4:signer",
+        "@com_github_aws_aws_sdk_go_v2_config//:config",
+    ],
+)
