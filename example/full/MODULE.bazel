@@ -1,0 +1,22 @@
+module(
+    name = "full_example",
+    version = "0.0.0",
+)
+
+bazel_dep(
+    name = "credential-helper",
+    version = "0.0.0",
+)
+local_path_override(
+    module_name = "credential-helper",
+    path = "../..",
+)
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "private-repo",
+    urls = ["https://github.com/my-org/private-repo/archive/refs/tags/v0.0.1.tar.gz"],
+    integrity = "sha256-cohWIonag4gZimD2Z/L8NKE+r5XnqV2VPbZt14QkuaE=",
+    strip_prefix = "private-repo-0.0.1",
+    build_file_content = """exports_files(glob(["**"]))""",
+)
