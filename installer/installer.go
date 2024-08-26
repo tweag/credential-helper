@@ -36,7 +36,7 @@ func install(credentialHelperBin string) (string, error) {
 	if runtime.GOOS == "windows" {
 		filename += ".exe"
 	}
-	destination := path.Join(installBase, "crendential-helper", "bin", filename)
+	destination := path.Join(installBase, "credential-helper", "bin", filename)
 	if err := os.MkdirAll(path.Dir(destination), 0o755); err != nil {
 		return "", err
 	}
