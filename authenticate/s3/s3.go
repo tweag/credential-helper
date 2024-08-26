@@ -14,7 +14,10 @@ import (
 	"github.com/tweag/credential-helper/api"
 )
 
-const expiresIn = 15 * time.Minute
+const (
+	expiresIn   = 15 * time.Minute
+	emptySHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+)
 
 type S3 struct {
 	signer signerv4.HTTPSigner
@@ -57,6 +60,11 @@ func (s *S3) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCre
 	httpReq := http.Request{
 		Method: http.MethodGet,
 		URL:    parsedURL,
+		Header: map[string][]string{
+			// We assume this is a GET request, so the request body must be empty.
+			// The SHA-256 hash of an empty string is always e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855.
+			"X-Amz-Content-SHA256": {emptySHA256},
+		},
 	}
 
 	cred, err := s.config.Credentials.Retrieve(ctx)
@@ -66,7 +74,7 @@ func (s *S3) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCre
 
 	ts := time.Now().UTC()
 
-	if err := s.signer.SignHTTP(ctx, cred, &httpReq, "UNSIGNED-PAYLOAD", "s3", region, ts); err != nil {
+	if err := s.signer.SignHTTP(ctx, cred, &httpReq, emptySHA256, "s3", region, ts); err != nil {
 		return api.GetCredentialsResponse{}, err
 	}
 
@@ -100,13 +108,19 @@ func regionFromHost(host string) string {
 	if !strings.HasSuffix(host, ".s3.amazonaws.com") {
 		return ""
 	}
-	// virtual-hosted-style url
-	// <bucket>.<region>.s3.amazonaws.com
 	host = strings.TrimSuffix(host, ".s3.amazonaws.com")
 
 	parts := strings.Split(host, ".")
-	if len(parts) != 2 {
-		return ""
+	switch len(parts) {
+	case 1:
+		// virtual-hosted-style url
+		// <bucket>.s3.amazonaws.com
+		return "us-east-1"
+	case 2:
+		// virtual-hosted-style url
+		// <bucket>.<region>.s3.amazonaws.com
+		return parts[1]
 	}
-	return parts[1]
+
+	return ""
 }
