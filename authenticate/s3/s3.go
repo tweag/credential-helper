@@ -30,10 +30,6 @@ func New(ctx context.Context) (*S3, error) {
 		return nil, err
 	}
 	return &S3{
-		// TODO: maybe disable header hoisting if needed
-		// func(opts *signerv4.SignerOptions) {
-		//	opts.DisableHeaderHoisting = true
-		//}
 		signer: signerv4.NewSigner(),
 		config: cfg,
 	}, nil
