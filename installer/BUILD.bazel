@@ -5,7 +5,10 @@ go_library(
     srcs = ["installer.go"],
     importpath = "github.com/tweag/credential-helper/installer",
     visibility = ["//visibility:private"],
-    deps = ["@rules_go//go/runfiles:go_default_library"],
+    deps = [
+        "//agent/locate",
+        "@rules_go//go/runfiles:go_default_library",
+    ],
 )
 
 go_binary(

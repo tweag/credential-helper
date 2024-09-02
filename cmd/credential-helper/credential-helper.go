@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/tweag/credential-helper/agent"
+	"github.com/tweag/credential-helper/agent/locate"
 	"github.com/tweag/credential-helper/api"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
@@ -109,7 +110,11 @@ func launchOrConnectAgent() (api.Cache, func() error, error) {
 	fmt.Fprintln(os.Stderr, "launched agent")
 
 	// TODO: make socket path configurable
-	socketCache, err := cache.NewSocketCache("agent.sock", time.Second)
+	sockPath, _, err := locate.AgentPaths()
+	if err != nil {
+		return nil, func() error { return nil }, err
+	}
+	socketCache, err := cache.NewSocketCache(sockPath, time.Second)
 	if err != nil {
 		return nil, func() error { return nil }, err
 	}
@@ -135,8 +140,11 @@ func agentProcess(ctx context.Context) {
 		log.Fatal("running as agent is not supported in standalone mode")
 	}
 
-	// TODO: make socket path configurable
-	service, cleanup, err := agent.NewCachingAgent("agent.sock", "agent.pid", cache.NewMemCache())
+	sockPath, pidPath, err := locate.AgentPaths()
+	if err != nil {
+		log.Fatal(err)
+	}
+	service, cleanup, err := agent.NewCachingAgent(sockPath, pidPath, cache.NewMemCache())
 	if err != nil {
 		log.Fatal(err)
 	}

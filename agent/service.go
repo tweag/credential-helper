@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -26,6 +27,9 @@ type CachingAgent struct {
 }
 
 func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache) (*CachingAgent, func() error, error) {
+	_ = os.MkdirAll(filepath.Dir(agentLockPath), 0o755)
+	_ = os.MkdirAll(filepath.Dir(socketPath), 0o755)
+
 	agentLock, err := os.OpenFile(agentLockPath, os.O_RDWR|os.O_CREATE, 0o666)
 	if err != nil {
 		return nil, func() error { return nil }, err

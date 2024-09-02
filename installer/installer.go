@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"runtime"
 
 	"github.com/bazelbuild/rules_go/go/runfiles"
+	"github.com/tweag/credential-helper/agent/locate"
 )
 
 var credentialHelperBin = "not set" // Set at link time
@@ -28,15 +28,10 @@ func main() {
 }
 
 func install(credentialHelperBin string) (string, error) {
-	installBase, err := os.UserCacheDir()
+	destination, err := locate.CredentialHelper()
 	if err != nil {
 		return "", err
 	}
-	filename := "credential-helper"
-	if runtime.GOOS == "windows" {
-		filename += ".exe"
-	}
-	destination := path.Join(installBase, "credential-helper", "bin", filename)
 	if err := os.MkdirAll(path.Dir(destination), 0o755); err != nil {
 		return "", err
 	}
