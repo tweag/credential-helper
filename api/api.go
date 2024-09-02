@@ -68,7 +68,7 @@ var CacheMiss = errors.New("cache miss")
 const (
 	Standalone          = "CREDENTIAL_HELPER_STANDALONE"
 	CredentialHelperBin = "CREDENTIAL_HELPER_BIN"
-	AgentSocketPath     = "CREDENTIAL_HELPER_AGENT_SOCKET_PATH"
-	AgentPidPath        = "CREDENTIAL_HELPER_AGENT_PID_PATH"
+	AgentSocketPath     = "CREDENTIAL_HELPER_AGENT_SOCKET"
+	AgentPidPath        = "CREDENTIAL_HELPER_AGENT_PID"
 	LogLevelEnv         = "CREDENTIAL_HELPER_LOGGING"
 )
