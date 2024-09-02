@@ -13,10 +13,25 @@ local_path_override(
 )
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 http_archive(
     name = "private-repo",
-    urls = ["https://github.com/my-org/private-repo/archive/refs/tags/v0.0.1.tar.gz"],
+    build_file_content = """exports_files(glob(["**"]))""",
     integrity = "sha256-cohWIonag4gZimD2Z/L8NKE+r5XnqV2VPbZt14QkuaE=",
     strip_prefix = "private-repo-0.0.1",
-    build_file_content = """exports_files(glob(["**"]))""",
+    urls = ["https://github.com/my-org/private-repo/archive/refs/tags/v0.0.1.tar.gz"],
+)
+
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+http_file(
+    name = "hello_world_s3",
+    integrity = "sha256-N5gMM5Ud5rDkUMNwGyGb/u6TBURwX2N80RWLY4J7s5A=",
+    urls = ["https://malte-s3-bazel-test.s3.amazonaws.com/hello_world"],
+)
+
+http_file(
+    name = "hello_world_gcs",
+    integrity = "sha256-N5gMM5Ud5rDkUMNwGyGb/u6TBURwX2N80RWLY4J7s5A=",
+    urls = ["https://storage.googleapis.com/rules_gcs/hello_world"],
 )
