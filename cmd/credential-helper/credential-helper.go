@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -141,6 +142,39 @@ func clientProcess(ctx context.Context) {
 	foreground(ctx, cache)
 }
 
+func clientCommandProcess(command string, r io.Reader) {
+	socketPath, _, err := locate.AgentPaths()
+	if err != nil {
+		logging.Fatalf("%v", err)
+	}
+	conn, err := agent.NewAgentCommandClient(socketPath)
+	if err != nil {
+		if command == api.AgentRequestShutdown {
+			return // ignore connection errors for shutdown. The agent may not be running.
+		}
+		logging.Fatalf("%v", err)
+	}
+	defer conn.Close()
+	var payload []byte
+	if r != nil {
+		payload, err = io.ReadAll(r)
+		if err != nil {
+			logging.Fatalf("%v", err)
+		}
+	}
+	resp, err := conn.Command(api.AgentRequest{
+		Method:  command,
+		Payload: payload,
+	})
+	if err != nil {
+		logging.Fatalf("%v", err)
+	}
+	if resp.Status != api.AgentResponseOK {
+		logging.Fatalf("agent response: %s %s", resp.Status, string(resp.Payload))
+	}
+	_, _ = os.Stdout.Write(resp.Payload)
+}
+
 // agent process runs in the background and caches responses.
 func agentProcess(ctx context.Context) {
 	if shouldRunStandalone() {
@@ -190,6 +224,15 @@ func main() {
 		clientProcess(ctx)
 	case "agent":
 		agentProcess(ctx)
+	case "shutdown":
+		clientCommandProcess(api.AgentRequestShutdown, nil)
+	case "prune":
+		clientCommandProcess(api.AgentRequestPrune, nil)
+	case "raw":
+		if len(os.Args) < 3 {
+			logging.Fatalf("missing command argument")
+		}
+		clientCommandProcess(os.Args[2], os.Stdin)
 	default:
 		logging.Fatalf("unknown command")
 	}

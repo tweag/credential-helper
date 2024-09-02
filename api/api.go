@@ -41,12 +41,12 @@ var (
 
 type AgentRequest struct {
 	Method  string          `json:"method"`
-	Payload json.RawMessage `json:"payload"`
+	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
 type AgentResponse struct {
 	Status  string          `json:"status"`
-	Payload json.RawMessage `json:"payload"`
+	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
 // Getter is the interface that must be implemented by credential helpers.
