@@ -14,6 +14,7 @@ go_library(
         "//authenticate/null",
         "//authenticate/s3",
         "//cache",
+        "//logging",
     ],
 )
 

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -15,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/tweag/credential-helper/api"
+	"github.com/tweag/credential-helper/logging"
 )
 
 type CachingAgent struct {
@@ -67,7 +67,7 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 	defer func() {
 		// TODO: perform error handling including acceptErr and anything that happens in handleConn
 		if acceptErr != nil {
-			fmt.Println(acceptErr)
+			logging.Errorf("failed to accept connection: %v\n", acceptErr)
 		}
 	}()
 	defer a.wg.Wait()
@@ -102,8 +102,8 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 }
 
 func (a *CachingAgent) handleConn(ctx context.Context, conn net.Conn) {
-	fmt.Println("handling connection")
-	defer fmt.Println("closing connection")
+	logging.Debugf("handling connection")
+	defer logging.Debugf("done handling connection")
 	defer conn.Close()
 	req := api.AgentRequest{}
 
@@ -112,15 +112,12 @@ func (a *CachingAgent) handleConn(ctx context.Context, conn net.Conn) {
 	for {
 		err := reader.Decode(&req)
 		if err != nil {
-			// handle eof
-			if errors.Is(err, io.EOF) {
-				fmt.Println("connection closed")
-			} else {
-				fmt.Printf("failed to decode request: %v\n", err)
+			if !errors.Is(err, io.EOF) {
+				logging.Errorf("failed to decode request: %v\n", err)
 			}
 			return
 		}
-		fmt.Println("received request:", req)
+		logging.Debugf("received request: { method: %q, payload: %s }\n", req.Method, string(req.Payload))
 
 		var resp api.AgentResponse
 		var respErr error
@@ -134,17 +131,22 @@ func (a *CachingAgent) handleConn(ctx context.Context, conn net.Conn) {
 		case api.AgentRequestShutdown:
 			resp, respErr = a.handleShutdown()
 		default:
-			fmt.Printf("unknown method: %s\n", req.Method)
-			resp = api.AgentResponse{Status: api.AgentResponseError, Payload: "unknown method"}
+			logging.Errorf("unknown method: %s\n", req.Method)
+			resp = api.AgentResponse{Status: api.AgentResponseError, Payload: []byte("\"unknown method\"")}
 		}
 
 		if respErr != nil {
-			log.Printf("failed to handle request: %v\n", respErr)
-			resp = api.AgentResponse{Status: api.AgentResponseError, Payload: respErr.Error()}
+			logging.Errorf("failed to handle request: %v\n", respErr)
+			rawError, err := json.Marshal(respErr.Error())
+			if err != nil {
+				rawError = []byte("\"unknown error\"")
+			}
+			resp = api.AgentResponse{Status: api.AgentResponseError, Payload: rawError}
 		}
 
+		logging.Debugf("sending response: { status: %q, payload: %s }\n", resp.Status, string(resp.Payload))
 		if err := json.NewEncoder(conn).Encode(resp); err != nil {
-			log.Printf("failed to encode response: %v\n", err)
+			logging.Errorf("failed to encode response: %v\n", err)
 		}
 	}
 }
@@ -164,7 +166,12 @@ func (a *CachingAgent) handleRetrieve(ctx context.Context, req api.AgentRequest)
 		return api.AgentResponse{}, err
 	}
 
-	return api.AgentResponse{Status: api.AgentResponseOK, Payload: resp}, nil
+	rawPayload, err := json.Marshal(resp)
+	if err != nil {
+		return api.AgentResponse{}, fmt.Errorf("retrieve: failed to marshal cache value: %w", err)
+	}
+
+	return api.AgentResponse{Status: api.AgentResponseOK, Payload: rawPayload}, nil
 }
 
 func (a *CachingAgent) handleStore(ctx context.Context, req api.AgentRequest) (api.AgentResponse, error) {
@@ -190,12 +197,12 @@ func (a *CachingAgent) handlePrune(ctx context.Context) (api.AgentResponse, erro
 }
 
 func (a *CachingAgent) handleShutdown() (api.AgentResponse, error) {
-	fmt.Println("shutdown requested")
+	logging.Debugf("shutdown requested")
 	if !a.shutdownStarted.CompareAndSwap(false, true) {
-		fmt.Println("shutdown already started")
+		logging.Debugf("shutdown already started")
 		return api.AgentResponse{Status: api.AgentResponseOK}, nil
 	}
-	fmt.Println("shutting down")
+	logging.Basicf("shutting down")
 	close(a.shutdownChan)
 	return api.AgentResponse{Status: api.AgentResponseOK}, nil
 }
@@ -204,7 +211,7 @@ func (a *CachingAgent) cleanup() error {
 	// This function must be called after Serve returns
 	// to ensure that all resources are cleaned up.
 	a.wg.Wait()
-	fmt.Println("cleanup")
+	logging.Debugf("cleaning up")
 	_ = syscall.Flock(int(a.lockFile.Fd()), syscall.LOCK_UN)
 	return a.lockFile.Close()
 }

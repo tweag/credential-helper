@@ -45,8 +45,8 @@ type AgentRequest struct {
 }
 
 type AgentResponse struct {
-	Status  string `json:"status"`
-	Payload any    `json:"payload"`
+	Status  string          `json:"status"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 // Getter is the interface that must be implemented by credential helpers.
@@ -64,9 +64,11 @@ type Cache interface {
 
 var CacheMiss = errors.New("cache miss")
 
+// Environment variable names used by the credential helper.
 const (
 	Standalone          = "CREDENTIAL_HELPER_STANDALONE"
 	CredentialHelperBin = "CREDENTIAL_HELPER_BIN"
 	AgentSocketPath     = "CREDENTIAL_HELPER_AGENT_SOCKET_PATH"
 	AgentPidPath        = "CREDENTIAL_HELPER_AGENT_PID_PATH"
+	LogLevelEnv         = "CREDENTIAL_HELPER_LOGGING"
 )

@@ -8,5 +8,8 @@ go_library(
     ],
     importpath = "github.com/tweag/credential-helper/agent",
     visibility = ["//visibility:public"],
-    deps = ["//api"],
+    deps = [
+        "//api",
+        "//logging",
+    ],
 )

@@ -68,12 +68,10 @@ func (c *SocketCache) Retrieve(ctx context.Context, cacheKey string) (api.GetCre
 		return api.GetCredentialsResponse{}, fmt.Errorf("retrieving cacheKey from agent: %s %v", resp.Status, resp.Payload)
 	}
 
-	respPayload, ok := resp.Payload.(api.GetCredentialsResponse)
-	if !ok {
-		return api.GetCredentialsResponse{}, fmt.Errorf("retrieving cacheKey from agent: invalid response paylod type %T", resp.Payload)
+	var respPayload api.GetCredentialsResponse
+	if err := json.Unmarshal(resp.Payload, &respPayload); err != nil {
+		return api.GetCredentialsResponse{}, fmt.Errorf("retrieving cacheKey from agent: umarshaling response: %w", err)
 	}
-
-	fmt.Fprintf(os.Stderr, "SocketCache.Retrieve: response: %v\n", respPayload)
 
 	return respPayload, nil
 }
