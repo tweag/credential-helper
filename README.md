@@ -5,7 +5,7 @@ A framework and agent for the [credential-helper spec][spec].
 ## Key Features
 
 - Credential Agent: An agent (similar to ssh-agent) that starts automatically on first use, caching credentials securely in memory for fast retrieval.
-- Smart caching: Reuses cached credentials where possible instead of generating fresh credentials each URI.
+- Smart caching: Reuses cached credentials where possible instead of generating fresh credentials for each URI.
 - Batteries Included: Support for popular services out of the box while being easily extensible.
 - Framework for Credential Helpers: A Go-based framework to create and manage credential helpers for commonly used cloud services and APIs.
 
