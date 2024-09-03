@@ -14,6 +14,7 @@ import (
 
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/logging"
+	keyring "github.com/zalando/go-keyring"
 	"golang.org/x/oauth2"
 	"sigs.k8s.io/yaml"
 )
@@ -25,16 +26,17 @@ func (g *GitHub) Resolver(ctx context.Context) (api.Resolver, error) {
 		logging.Basicf("using GitHub token from environment")
 		return &GitHubResolver{tokenSource: tokenSource}, nil
 	}
-	hosts, err := hostsFromFile(path.Join(configDir(), "hosts.yml"))
-	if err != nil {
-		return nil, err
+	tokenSource, err := NewGitHubTokenSourceFromFile()
+	if err == nil {
+		logging.Debugf("loaded GitHub hosts file from %s", path.Join(configDir(), "hosts.yml"))
+		return &GitHubResolver{tokenSource: tokenSource}, nil
 	}
-	logging.Debugf("loaded GitHub hosts file from %s: %v", path.Join(configDir(), "hosts.yml"), hosts)
-	tokenSource, err := NewGitHubTokenSource("github.com", hosts)
-	if err != nil {
-		return nil, err
+	token, err := keyring.Get("gh:github.com", "")
+	if err == nil {
+		logging.Basicf("using GitHub token from keyring")
+		return &GitHubResolver{tokenSource: &GitHubTokenSource{token: token}}, nil
 	}
-	return &GitHubResolver{tokenSource: tokenSource}, nil
+	return nil, errors.New("no GitHub token found")
 }
 
 // CacheKey returns a cache key for the given request.
@@ -135,11 +137,17 @@ func NewGitHubTokenSourceFromEnv() (*GitHubTokenSource, error) {
 	return nil, fmt.Errorf("no token found in environment")
 }
 
-func NewGitHubTokenSource(host string, cfg HostsFile) (*GitHubTokenSource, error) {
-	if hostCfg, ok := cfg[host]; ok {
-		return &GitHubTokenSource{token: hostCfg.OAuthToken}, nil
+func NewGitHubTokenSourceFromFile() (*GitHubTokenSource, error) {
+	const host = "github.com"
+	cfg, err := hostsFromFile(path.Join(configDir(), "hosts.yml"))
+	if err != nil {
+		return nil, err
 	}
-	return nil, fmt.Errorf("no token found for host %q", host)
+	hostCfg, ok := cfg[host]
+	if !ok || hostCfg.OAuthToken == "" {
+		return nil, fmt.Errorf("no token found for host %q", host)
+	}
+	return &GitHubTokenSource{token: hostCfg.OAuthToken}, nil
 }
 
 func (g *GitHubTokenSource) Token() (*oauth2.Token, error) {
