@@ -26,20 +26,20 @@ const usage = `Usage:
   credential-helper get
 `
 
-func chooseHelper(ctx context.Context, rawURL string) (api.Getter, error) {
+func chooseHelper(rawURL string) (api.Helper, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, err
 	}
 	switch {
 	case strings.HasSuffix(u.Host, ".amazonaws.com"):
-		return authenticateS3.New(ctx)
+		return &authenticateS3.S3{}, nil
 	case strings.EqualFold(u.Host, "storage.googleapis.com"):
-		return authenticateGCS.New(ctx)
+		return &authenticateGCS.GCS{}, nil
 	case strings.EqualFold(u.Host, "github.com"):
 		fallthrough
 	case strings.HasSuffix(strings.ToLower(u.Host), ".github.com"):
-		return authenticateGitHub.New(ctx)
+		return &authenticateGitHub.GitHub{}, nil
 	default:
 		logging.Basicf("no matching credential helper found for %s - returning empty response\n", rawURL)
 		return authenticateNull.Null{}, nil
@@ -56,7 +56,7 @@ func foreground(ctx context.Context, cache api.Cache) {
 		logging.Fatalf("%v", err)
 	}
 
-	authenticator, err := chooseHelper(ctx, req.URI)
+	authenticator, err := chooseHelper(req.URI)
 	if err != nil {
 		logging.Fatalf("%v", err)
 	}
@@ -82,7 +82,12 @@ func foreground(ctx context.Context, cache api.Cache) {
 		logging.Debugf("cache miss")
 	}
 
-	resp, err = authenticator.Get(ctx, req)
+	resolver, err := authenticator.Resolver(ctx)
+	if err != nil {
+		logging.Fatalf("instantiating resolver: %s", err)
+	}
+
+	resp, err = resolver.Get(ctx, req)
 	if err != nil {
 		logging.Fatalf("%s", err)
 	}

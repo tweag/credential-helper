@@ -13,33 +13,48 @@ import (
 	"time"
 
 	"github.com/tweag/credential-helper/api"
+	"github.com/tweag/credential-helper/logging"
 	"golang.org/x/oauth2"
 	"sigs.k8s.io/yaml"
 )
 
-type GitHub struct {
-	tokenSource oauth2.TokenSource
-}
+type GitHub struct{}
 
-func New(ctx context.Context) (*GitHub, error) {
+func (g *GitHub) Resolver(ctx context.Context) (api.Resolver, error) {
 	if tokenSource, err := NewGitHubTokenSourceFromEnv(); err == nil {
-		return &GitHub{tokenSource: tokenSource}, nil
+		logging.Basicf("using GitHub token from environment")
+		return &GitHubResolver{tokenSource: tokenSource}, nil
 	}
 	hosts, err := hostsFromFile(path.Join(configDir(), "hosts.yml"))
 	if err != nil {
 		return nil, err
 	}
+	logging.Debugf("loaded GitHub hosts file from %s: %v", path.Join(configDir(), "hosts.yml"), hosts)
 	tokenSource, err := NewGitHubTokenSource("github.com", hosts)
 	if err != nil {
 		return nil, err
 	}
-	return &GitHub{tokenSource: tokenSource}, nil
+	return &GitHubResolver{tokenSource: tokenSource}, nil
+}
+
+// CacheKey returns a cache key for the given request.
+// For GitHub, the same token can be used for all requests.
+func (g *GitHub) CacheKey(req api.GetCredentialsRequest) string {
+	parsedURL, error := url.Parse(req.URI)
+	if error != nil {
+		return "" // disable caching
+	}
+	return parsedURL.Host
+}
+
+type GitHubResolver struct {
+	tokenSource oauth2.TokenSource
 }
 
 // Get implements the get command of the credential-helper spec:
 //
 // https://github.com/EngFlow/credential-helper-spec/blob/main/spec.md#get
-func (g *GitHub) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
+func (g *GitHubResolver) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
 	parsedURL, error := url.Parse(req.URI)
 	if error != nil {
 		return api.GetCredentialsResponse{}, error
@@ -72,16 +87,6 @@ func (g *GitHub) Get(ctx context.Context, req api.GetCredentialsRequest) (api.Ge
 			"Authorization": {"Bearer " + token.AccessToken},
 		},
 	}, nil
-}
-
-// CacheKey returns a cache key for the given request.
-// For GitHub, the same token can be used for all requests.
-func (g *GitHub) CacheKey(req api.GetCredentialsRequest) string {
-	parsedURL, error := url.Parse(req.URI)
-	if error != nil {
-		return "" // disable caching
-	}
-	return parsedURL.Host
 }
 
 type ghCLITokenSource struct{}
@@ -138,6 +143,9 @@ func NewGitHubTokenSource(host string, cfg HostsFile) (*GitHubTokenSource, error
 }
 
 func (g *GitHubTokenSource) Token() (*oauth2.Token, error) {
+	if g.token == "" {
+		return nil, errors.New("no token available")
+	}
 	return &oauth2.Token{
 		AccessToken: g.token,
 		// TODO: guess or check the expiry time

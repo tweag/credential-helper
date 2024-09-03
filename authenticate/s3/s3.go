@@ -19,26 +19,34 @@ const (
 	emptySHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 )
 
-type S3 struct {
-	signer signerv4.HTTPSigner
-	config aws.Config
-}
+type S3 struct{}
 
-func New(ctx context.Context) (*S3, error) {
+func (S3) Resolver(ctx context.Context) (api.Resolver, error) {
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &S3{
+	return &S3Resolver{
 		signer: signerv4.NewSigner(),
 		config: cfg,
 	}, nil
 }
 
+// CacheKey returns the cache key for the given request.
+// For S3, every object has a unique signature, so the URI is a good cache key.
+func (s *S3) CacheKey(req api.GetCredentialsRequest) string {
+	return req.URI
+}
+
+type S3Resolver struct {
+	signer signerv4.HTTPSigner
+	config aws.Config
+}
+
 // Get implements the get command of the credential-helper spec:
 //
 // https://github.com/EngFlow/credential-helper-spec/blob/main/spec.md#get
-func (s *S3) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
+func (s *S3Resolver) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
 	parsedURL, error := url.Parse(req.URI)
 	if error != nil {
 		return api.GetCredentialsResponse{}, error
@@ -78,12 +86,6 @@ func (s *S3) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCre
 		Expires: ts.Add(expiresIn).Format(time.RFC3339),
 		Headers: httpReq.Header,
 	}, nil
-}
-
-// CacheKey returns the cache key for the given request.
-// For S3, every object has a unique signature, so the URI is a good cache key.
-func (s *S3) CacheKey(req api.GetCredentialsRequest) string {
-	return req.URI
 }
 
 func regionFromHost(host string) string {

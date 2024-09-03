@@ -49,10 +49,20 @@ type AgentResponse struct {
 	Payload json.RawMessage `json:"payload,omitempty"`
 }
 
-// Getter is the interface that must be implemented by credential helpers.
-type Getter interface {
+// Resolver is used to retrieve credentials for a given URI.
+type Resolver interface {
 	Get(context.Context, GetCredentialsRequest) (GetCredentialsResponse, error)
+}
+
+// CacheKeyer is used to generate a cache key for a given request.
+type CacheKeyer interface {
 	CacheKey(GetCredentialsRequest) string
+}
+
+// Helper is the interface that must be implemented by credential helpers
+type Helper interface {
+	Resolver(context.Context) (Resolver, error)
+	CacheKeyer
 }
 
 // Cache is the interface that must be implemented by cache implementations.

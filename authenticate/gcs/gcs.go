@@ -11,22 +11,30 @@ import (
 	gauth "golang.org/x/oauth2/google"
 )
 
-type GCS struct {
-	tokenSource oauth2.TokenSource
+type GCS struct{}
+
+// CacheKey returns a cache key for the given request.
+// For GCS, the same token can be used for all requests.
+func (g *GCS) CacheKey(req api.GetCredentialsRequest) string {
+	return "https://storage.googleapis.com/"
 }
 
-func New(ctx context.Context) (*GCS, error) {
+func (GCS) Resolver(ctx context.Context) (api.Resolver, error) {
 	credentials, err := gauth.FindDefaultCredentials(ctx, "https://www.googleapis.com/auth/devstorage.read_only")
 	if err != nil {
 		return nil, err
 	}
-	return &GCS{tokenSource: credentials.TokenSource}, nil
+	return &GCSResolver{tokenSource: credentials.TokenSource}, nil
+}
+
+type GCSResolver struct {
+	tokenSource oauth2.TokenSource
 }
 
 // Get implements the get command of the credential-helper spec:
 //
 // https://github.com/EngFlow/credential-helper-spec/blob/main/spec.md#get
-func (g *GCS) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
+func (g *GCSResolver) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
 	parsedURL, error := url.Parse(req.URI)
 	if error != nil {
 		return api.GetCredentialsResponse{}, error
@@ -54,10 +62,4 @@ func (g *GCS) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCr
 			"Authorization": {"Bearer " + token.AccessToken},
 		},
 	}, nil
-}
-
-// CacheKey returns a cache key for the given request.
-// For GCS, the same token can be used for all requests.
-func (g *GCS) CacheKey(req api.GetCredentialsRequest) string {
-	return "https://storage.googleapis.com/"
 }
