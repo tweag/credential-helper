@@ -83,7 +83,7 @@ common --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helpe
 Simply remove a line if you do not want the credential helper to be used for that service.
 You can also configure the helper to be used for every domain (`--credential_helper=%workspace%/tools/credential-helper`).
 
-Now is a good time to install the credential helper. Simply run `bazel run @credential-helper//install` to add the binary to your system. This step needs to be performed once per user.
+Now is a good time to install the credential helper. Simply run `bazel run @credential-helper//installer` to add the binary to your system. This step needs to be performed once per user.
 
 ## Configuration
 
