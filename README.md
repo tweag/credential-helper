@@ -108,11 +108,11 @@ The following options exist:
 
 1. Stop the agent (if it is running in the background)
     ```
-    tools/credential-helper shutdown
+    tools/credential-helper agent-shutdown
     ```
 2. Start the agent in a separate terminal
     ```
-    CREDENTIAL_HELPER_LOGGING=debug tools/credential-helper agent
+    CREDENTIAL_HELPER_LOGGING=debug tools/credential-helper agent-launch
     ```
 3. Run Bazel with the `CREDENTIAL_HELPER_LOGGING` environment variable
     ```

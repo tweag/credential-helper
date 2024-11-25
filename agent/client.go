@@ -20,7 +20,7 @@ func LaunchAgentProcess() error {
 	procAttr := &os.ProcAttr{
 		Sys: &sys,
 	}
-	proc, err := os.StartProcess(self, []string{self, "agent"}, procAttr)
+	proc, err := os.StartProcess(self, []string{self, "agent-launch"}, procAttr)
 	if err != nil {
 		return err
 	}

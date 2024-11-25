@@ -121,7 +121,6 @@ func launchOrConnectAgent() (api.Cache, func() error, error) {
 
 	logging.Debugf("launched agent")
 
-	// TODO: make socket path configurable
 	sockPath, _, err := locate.AgentPaths()
 	if err != nil {
 		return nil, func() error { return nil }, err
@@ -227,13 +226,13 @@ func main() {
 	switch command {
 	case "get":
 		clientProcess(ctx)
-	case "agent":
+	case "agent-launch":
 		agentProcess(ctx)
-	case "shutdown":
+	case "agent-shutdown":
 		clientCommandProcess(api.AgentRequestShutdown, nil)
-	case "prune":
+	case "agent-prune":
 		clientCommandProcess(api.AgentRequestPrune, nil)
-	case "raw":
+	case "agent-raw":
 		if len(os.Args) < 3 {
 			logging.Fatalf("missing command argument")
 		}
