@@ -61,7 +61,6 @@ func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache) (
 }
 
 func (a *CachingAgent) Serve(ctx context.Context) error {
-	a.wg.Add(1)
 	var acceptErr error
 
 	defer func() {
@@ -72,7 +71,6 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 	}()
 	defer a.wg.Wait()
 	defer a.lis.Close()
-	defer a.wg.Done()
 
 	acceptChan := make(chan net.Conn)
 	a.wg.Add(1)
@@ -112,8 +110,13 @@ func (a *CachingAgent) handleConn(ctx context.Context, conn net.Conn) {
 	for {
 		err := reader.Decode(&req)
 		if err != nil {
-			if !errors.Is(err, io.EOF) {
+			if errors.Is(err, io.EOF) {
+				logging.Errorf("connection is closed")
+			} else {
 				logging.Errorf("failed to decode request: %v\n", err)
+			}
+			if err := json.NewEncoder(conn).Encode(api.AgentResponse{Status: api.AgentResponseError, Payload: []byte("\"invalid json in request\"")}); err != nil {
+				logging.Errorf("failed to encode response: %v\n", err)
 			}
 			return
 		}

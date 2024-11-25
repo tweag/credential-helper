@@ -22,8 +22,8 @@ type GetCredentialsResponse struct {
 // CachableGetCredentialsResponse is a GetCredentialsResponse with an additional cache key.
 // A response with a non-empy cache key and a non-empty Expires field may be cached.
 type CachableGetCredentialsResponse struct {
-	CacheKey string
-	Response GetCredentialsResponse
+	CacheKey string                 `json:"cacheKey,omitempty"`
+	Response GetCredentialsResponse `json:"response,omitempty"`
 }
 
 var (

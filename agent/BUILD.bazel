@@ -1,4 +1,4 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "agent",
@@ -11,5 +11,15 @@ go_library(
     deps = [
         "//api",
         "//logging",
+    ],
+)
+
+go_test(
+    name = "agent_test",
+    srcs = ["agent_rpc_test.go"],
+    embed = [":agent"],
+    deps = [
+        "//cache",
+        "@com_github_stretchr_testify//assert",
     ],
 )

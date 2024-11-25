@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//agent/locate",
-        "@rules_go//go/runfiles:go_default_library",
+        "@rules_go//go/runfiles",
     ],
 )
 
