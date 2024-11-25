@@ -4,11 +4,11 @@ module(
 )
 
 bazel_dep(
-    name = "credential-helper",
+    name = "tweag-credential-helper",
     version = "0.0.0",
 )
 local_path_override(
-    module_name = "credential-helper",
+    module_name = "tweag-credential-helper",
     path = "../..",
 )
 

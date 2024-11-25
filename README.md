@@ -57,7 +57,7 @@ If you want to use prebuilt artifacts, skip ahead to the [configuration](#config
 Add the following to your `MODULE.bazel` if you want to perform the recommended installation:
 
 ```starlark
-bazel_dep(name = "credential-helper", version = "0.0.1")
+bazel_dep(name = "tweag-credential-helper", version = "0.0.1")
 ```
 
 Then add the shell stub to your own workspace.
@@ -83,7 +83,7 @@ common --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helpe
 Simply remove a line if you do not want the credential helper to be used for that service.
 You can also configure the helper to be used for every domain (`--credential_helper=%workspace%/tools/credential-helper`).
 
-Now is a good time to install the credential helper. Simply run `bazel run @credential-helper//installer` to add the binary to your system. This step needs to be performed once per user.
+Now is a good time to install the credential helper. Simply run `bazel run @tweag-credential-helper//installer` to add the binary to your system. This step needs to be performed once per user.
 
 ## Configuration
 
@@ -95,11 +95,11 @@ The following options exist:
 - `$CREDENTIAL_HELPER_STANDALONE`:
   If set to 1, the credential helper will run in standalone mode, which means it will not start or connect to the agent process.
 - `$CREDENTIAL_HELPER_BIN`:
-  Path of the credential helper binary. If not set, the helper will be searched in `${HOME}/.cache/credential-helper/bin/credential-helper`
+  Path of the credential helper binary. If not set, the helper will be searched in `${HOME}/.cache/tweag-credential-helper/bin/credential-helper`
 - `$CREDENTIAL_HELPER_AGENT_SOCKET`
-  Path of the agent socket. If not set, the helper will use the default path `${HOME}/.cache/credential-helper/run/agent.sock`.
+  Path of the agent socket. If not set, the helper will use the default path `${HOME}/.cache/tweag-credential-helper/run/agent.sock`.
 - `$CREDENTIAL_HELPER_AGENT_PID`:
-  Path of the agent pid file. If not set, the helper will use the default path `${HOME}/.cache/credential-helper/run/agent.pid`
+  Path of the agent pid file. If not set, the helper will use the default path `${HOME}/.cache/tweag-credential-helper/run/agent.pid`
 - `$CREDENTIAL_HELPER_LOGGING=off|basic|debug`
   Log level of the credential helper. Debug may expose sensitive information. Default is off.
 
