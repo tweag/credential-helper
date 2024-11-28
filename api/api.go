@@ -82,3 +82,8 @@ const (
 	AgentPidPath        = "CREDENTIAL_HELPER_AGENT_PID"
 	LogLevelEnv         = "CREDENTIAL_HELPER_LOGGING"
 )
+
+// HelperFactory chooses a credential helper (like s3, gcs, github, ...) based on the raw uri.
+type HelperFactory func(string) (Helper, error)
+
+type NewCache func() Cache

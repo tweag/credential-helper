@@ -1,0 +1,16 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fallback",
+    srcs = ["fallback_factory.go"],
+    importpath = "github.com/tweag/credential-helper/helperfactory/fallback",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "//authenticate/gcs",
+        "//authenticate/github",
+        "//authenticate/null",
+        "//authenticate/s3",
+        "//logging",
+    ],
+)

@@ -13,7 +13,7 @@ type MemCache struct {
 	mux   sync.RWMutex
 }
 
-func NewMemCache() *MemCache {
+func NewMemCache() api.Cache {
 	return &MemCache{
 		cache: make(map[string]api.CachableGetCredentialsResponse),
 	}

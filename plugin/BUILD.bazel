@@ -1,0 +1,4 @@
+exports_files([
+    "cache.go.tpl",
+    "helperfactory.go.tpl",
+])

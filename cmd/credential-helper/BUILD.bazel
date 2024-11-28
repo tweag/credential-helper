@@ -1,23 +1,26 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
+exports_files(["credential-helper.go"])
+
 go_library(
     name = "credential-helper_lib",
-    srcs = ["credential-helper.go"],
+    srcs = [
+        "cache.go",
+        "credential-helper.go",
+        "helperfactory.go",
+    ],
     importpath = "github.com/tweag/credential-helper/cmd/credential-helper",
     visibility = ["//visibility:private"],
     deps = [
-        "//agent",
-        "//agent/locate",
-        "//api",
-        "//authenticate/gcs",
-        "//authenticate/github",
-        "//authenticate/null",
-        "//authenticate/s3",
         "//cache",
-        "//logging",
+        "//cmd/root",
+        "//helperfactory/fallback",
     ],
 )
 
+# This creates a working, default credential helper
+# which does not allow customization.
+# Use //plugin:defs.bzl%credential_helper instead.
 go_binary(
     name = "credential-helper",
     embed = [":credential-helper_lib"],

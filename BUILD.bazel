@@ -1,3 +1,14 @@
 load("@gazelle//:def.bzl", "gazelle")
+load("//plugin:defs.bzl", "credential_helper")
 
 gazelle(name = "gazelle")
+
+credential_helper(
+    name = "tweag-credential-helper",
+    cache = "//cache",
+    cache_type_name = "NewMemCache",
+    helperfactory = "//helperfactory/fallback",
+    helperfactory_type_name = "FallbackHelperFactory",
+    pure = "on",
+    visibility = ["//visibility:public"],
+)
