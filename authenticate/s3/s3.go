@@ -47,9 +47,9 @@ type S3Resolver struct {
 //
 // https://github.com/EngFlow/credential-helper-spec/blob/main/spec.md#get
 func (s *S3Resolver) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
-	parsedURL, error := url.Parse(req.URI)
-	if error != nil {
-		return api.GetCredentialsResponse{}, error
+	parsedURL, err := url.Parse(req.URI)
+	if err != nil {
+		return api.GetCredentialsResponse{}, err
 	}
 
 	if parsedURL.Scheme != "https" {

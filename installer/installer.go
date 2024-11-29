@@ -35,6 +35,8 @@ func install(credentialHelperBin string) (string, error) {
 	if err := os.MkdirAll(path.Dir(destination), 0o755); err != nil {
 		return "", err
 	}
+	// TODO(malt3): try stopping existing credential helper
+	// using socket and maybe PID
 	_ = os.Remove(destination)
 	return destination, os.Link(credentialHelperBin, destination)
 }
