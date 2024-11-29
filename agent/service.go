@@ -112,6 +112,7 @@ func (a *CachingAgent) handleConn(ctx context.Context, conn net.Conn) {
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				logging.Errorf("connection is closed")
+				return
 			} else {
 				logging.Errorf("failed to decode request: %v\n", err)
 			}
