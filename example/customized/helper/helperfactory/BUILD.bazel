@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "helperfactory",
+    srcs = ["helperfactory.go"],
+    importpath = "github.com/tweag/credential-helper/example/customized/helper/helperfactory",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//helper/authenticate",
+        "@tweag-credential-helper//api",
+    ],
+)

@@ -1,0 +1,18 @@
+load("@gazelle//:def.bzl", "gazelle")
+load("@tweag-credential-helper//plugin:defs.bzl", "credential_helper")
+
+gazelle(name = "gazelle")
+
+# This is an example for creating your own, custom credential helper
+credential_helper(
+    name = "custom_credential_helper",
+    # Set `cache` to a `go_library` that implements `api.Cache` and a
+    # function of type api.NewCache to construct it.
+    cache = "//helper/cache",
+    cache_type_name = "NewSqliteCache",
+    # Set `helperfactory` to a `go_library` that implements `api.HelperFactory`.
+    helperfactory = "//helper/helperfactory",
+    helperfactory_type_name = "CustomHelperFactory",
+    pure = "on",
+    visibility = ["//visibility:public"],
+)

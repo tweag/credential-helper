@@ -1,0 +1,4 @@
+common --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
+common --credential_helper=github.com=%workspace%/tools/credential-helper
+common --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper
+common --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper

@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cache",
+    srcs = ["sqlitecache.go"],
+    importpath = "github.com/tweag/credential-helper/example/customized/helper/cache",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_modernc_sqlite//:sqlite",
+        "@tweag-credential-helper//api",
+    ],
+)
