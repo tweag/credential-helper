@@ -1,4 +1,4 @@
-module github.com/tweag/credential-helper/example/customized
+module github.com/tweag/credential-helper/examples/customized
 
 go 1.23.3
 
