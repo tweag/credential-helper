@@ -1,5 +1,5 @@
 load("@gazelle//:def.bzl", "gazelle")
-load("@tweag-credential-helper//plugin:defs.bzl", "credential_helper")
+load("@tweag-credential-helper//plugin:defs.bzl", "credential_helper", "installer")
 
 gazelle(name = "gazelle")
 
@@ -15,4 +15,11 @@ credential_helper(
     helperfactory_type_name = "CustomHelperFactory",
     pure = "on",
     visibility = ["//visibility:public"],
+)
+
+# You can invoke the installer using
+#   bazel run //:custom_installer
+installer(
+    name = "custom_installer",
+    credential_helper = ":custom_credential_helper",
 )
