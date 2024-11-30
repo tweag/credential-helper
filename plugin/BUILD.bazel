@@ -2,3 +2,9 @@ exports_files([
     "cache.go.tpl",
     "helperfactory.go.tpl",
 ])
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

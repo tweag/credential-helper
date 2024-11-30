@@ -11,3 +11,9 @@ go_library(
         "@org_golang_x_oauth2//google",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

@@ -12,3 +12,9 @@ go_library(
         "@com_github_aws_aws_sdk_go_v2_config//:config",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

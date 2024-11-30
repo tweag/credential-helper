@@ -23,3 +23,9 @@ go_test(
         "@com_github_stretchr_testify//assert",
     ],
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

@@ -1,8 +1,6 @@
 load("@gazelle//:def.bzl", "gazelle")
 load("@tweag-credential-helper//plugin:defs.bzl", "credential_helper")
 
-gazelle(name = "gazelle")
-
 credential_helper(
     name = "tweag-credential-helper",
     cache = "@tweag-credential-helper//cache",
@@ -11,4 +9,37 @@ credential_helper(
     helperfactory_type_name = "FallbackHelperFactory",
     pure = "on",
     visibility = ["//visibility:public"],
+)
+
+# Only development and test targets below
+
+gazelle(name = "gazelle")
+
+# This target collects all of the parent workspace files needed by the child workspaces.
+filegroup(
+    name = "local_repository_files",
+    srcs = [
+        "BUILD.bazel",
+        "MODULE.bazel",
+        "WORKSPACE",
+        "go.mod",
+        "go.sum",
+        "//agent:all_files",
+        "//agent/locate:all_files",
+        "//api:all_files",
+        "//authenticate/gcs:all_files",
+        "//authenticate/github:all_files",
+        "//authenticate/null:all_files",
+        "//authenticate/s3:all_files",
+        "//cache:all_files",
+        "//cmd:all_files",
+        "//cmd/credential-helper:all_files",
+        "//cmd/root:all_files",
+        "//helperfactory:all_files",
+        "//helperfactory/fallback:all_files",
+        "//installer:all_files",
+        "//logging:all_files",
+        "//plugin:all_files",
+    ],
+    visibility = ["//:__subpackages__"],
 )
