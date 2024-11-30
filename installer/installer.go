@@ -36,6 +36,10 @@ func install(credentialHelperBin string) (string, error) {
 	if err := os.MkdirAll(path.Dir(destination), 0o755); err != nil {
 		return "", err
 	}
+	// NOTE: this stop-cleanup-install procedure is merely best effort.
+	// It is clearly prone to race conditions
+	// As an improvement,
+	// The installer could take the agent pid lock before making changes.
 	shutdownOut := attemptAgentShutdown(destination)
 	if len(shutdownOut) > 0 {
 		fmt.Fprintf(os.Stderr, "Shutting down old agent before uninstall: %s", shutdownOut)
