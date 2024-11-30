@@ -5,17 +5,17 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/bazelbuild/rules_go/go/runfiles"
 	"github.com/tweag/credential-helper/agent/locate"
 )
 
-var credentialHelperBin = "not set" // Set at link time
-
 func main() {
-	path, err := runfiles.Rlocation(credentialHelperBin)
+	pathFromEnv := os.Getenv("CREDENTIAL_HELPER_INSTALLER_SOURCE")
+	path, err := runfiles.Rlocation(pathFromEnv)
 	if err != nil {
-		fatalFmt("Failed to find %s: %v", credentialHelperBin, err)
+		fatalFmt("Failed to find %s: %v", pathFromEnv, err)
 	}
 
 	if _, err := os.Stat(path); err != nil {
@@ -54,6 +54,9 @@ func attemptAgentShutdown(agentPath string) string {
 }
 
 func fatalFmt(format string, args ...any) {
+	if !strings.HasSuffix(format, "\n") {
+		format += "\n"
+	}
 	fmt.Fprintf(os.Stderr, format, args...)
 	os.Exit(1)
 }

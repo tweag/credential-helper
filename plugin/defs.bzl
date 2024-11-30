@@ -76,3 +76,63 @@ credential_helper_plugin = rule(
         ),
     },
 )
+
+
+def _installer_impl(ctx):
+    installer = ctx.actions.declare_file(
+        ctx.attr.name + ".link",
+    )
+    ctx.actions.symlink(
+        output = installer,
+        target_file = ctx.executable._installer_bin,
+        is_executable=True,
+    )
+
+    runfiles = ctx.runfiles().merge_all([
+        ctx.attr.credential_helper[DefaultInfo].default_runfiles,
+        ctx.attr._installer_bin[DefaultInfo].default_runfiles,
+    ])
+    env = {
+        "CREDENTIAL_HELPER_INSTALLER_SOURCE": ctx.expand_location(
+            "$(rlocationpath {})".format(ctx.executable.credential_helper.owner),
+            [ctx.attr.credential_helper],
+        ),
+    }
+    for k, v in ctx.attr.env.items():
+        env[k] = ctx.expand_location(v, [ctx.attr.credential_helper])
+    
+    return [
+        DefaultInfo(
+            files = depset([installer]),
+            runfiles = runfiles,
+            executable = installer,
+        ),
+        RunEnvironmentInfo(env, ctx.attr.env_inherit)
+    ]
+
+installer = rule(
+    implementation = _installer_impl,
+    attrs = {
+        "credential_helper": attr.label(
+            doc = "The binary to install",
+            executable = True,
+            cfg = "target",
+            default = Label("@tweag-credential-helper"),
+        ),
+        "env": attr.string_dict(
+            doc = """Environment variables to set for the test execution.
+            The values (but not keys) are subject to
+            [location expansion](https://bazel.build/reference/be/make-variables#predefined_label_variables) but not full
+            """,
+        ),
+        "env_inherit": attr.string_list(
+            doc = """Environment variables to inherit from the external environment.""",
+        ),
+        "_installer_bin": attr.label(
+            executable = True,
+            cfg = "target",
+            default = Label("@tweag-credential-helper//installer:installer_bin"),
+        ),
+    },
+    executable = True,
+)

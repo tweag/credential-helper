@@ -1,4 +1,10 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@tweag-credential-helper//plugin:defs.bzl", "installer")
+
+installer(
+    name = "installer",
+    credential_helper = "@tweag-credential-helper",
+)
 
 go_library(
     name = "installer_lib",
@@ -12,11 +18,8 @@ go_library(
 )
 
 go_binary(
-    name = "installer",
-    data = ["//:tweag-credential-helper"],
+    # keep
+    name = "installer_bin",
     embed = [":installer_lib"],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "credentialHelperBin": "$(rlocationpath //:tweag-credential-helper)",
-    },
 )
