@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path"
 
 	"github.com/bazelbuild/rules_go/go/runfiles"
@@ -35,10 +36,21 @@ func install(credentialHelperBin string) (string, error) {
 	if err := os.MkdirAll(path.Dir(destination), 0o755); err != nil {
 		return "", err
 	}
-	// TODO(malt3): try stopping existing credential helper
-	// using socket and maybe PID
+	shutdownOut := attemptAgentShutdown(destination)
+	if len(shutdownOut) > 0 {
+		fmt.Fprintf(os.Stderr, "Shutting down old agent before uninstall: %s", shutdownOut)
+	}
+
 	_ = os.Remove(destination)
 	return destination, os.Link(credentialHelperBin, destination)
+}
+
+func attemptAgentShutdown(agentPath string) string {
+	out, err := exec.Command(agentPath, "agent-shutdown").CombinedOutput()
+	if err != nil {
+		return ""
+	}
+	return string(out)
 }
 
 func fatalFmt(format string, args ...any) {
