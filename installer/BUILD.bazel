@@ -13,10 +13,10 @@ go_library(
 
 go_binary(
     name = "installer",
-    data = ["//cmd/credential-helper"],
+    data = ["//:tweag-credential-helper"],
     embed = [":installer_lib"],
     visibility = ["//visibility:public"],
     x_defs = {
-        "credentialHelperBin": "$(rlocationpath //cmd/credential-helper)",
+        "credentialHelperBin": "$(rlocationpath //:tweag-credential-helper)",
     },
 )

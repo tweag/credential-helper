@@ -1,6 +1,8 @@
 package locate
 
 import (
+	"crypto/md5"
+	"fmt"
 	"os"
 	"path"
 	"runtime"
@@ -9,12 +11,24 @@ import (
 )
 
 func Base() (string, error) {
+	if base, ok := os.LookupEnv(api.CredentialHelperInstallBase); ok {
+		return base, nil
+	}
+
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return "", err
 	}
 
-	return path.Join(cacheDir, "credential-helper"), nil
+	workspaceDirectory, ok := os.LookupEnv("BUILD_WORKSPACE_DIRECTORY")
+	if !ok {
+		workspaceDirectory, err = os.Getwd()
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return path.Join(cacheDir, "tweag-credential-helper", installBasePathComponent(workspaceDirectory)), nil
 }
 
 func Bin() (string, error) {
@@ -63,4 +77,8 @@ func AgentPaths() (string, string, error) {
 	}
 
 	return socketPath, pidPath, nil
+}
+
+func installBasePathComponent(workspaceDirectory string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(workspaceDirectory)))
 }

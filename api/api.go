@@ -76,11 +76,12 @@ var CacheMiss = errors.New("cache miss")
 
 // Environment variable names used by the credential helper.
 const (
-	Standalone          = "CREDENTIAL_HELPER_STANDALONE"
-	CredentialHelperBin = "CREDENTIAL_HELPER_BIN"
-	AgentSocketPath     = "CREDENTIAL_HELPER_AGENT_SOCKET"
-	AgentPidPath        = "CREDENTIAL_HELPER_AGENT_PID"
-	LogLevelEnv         = "CREDENTIAL_HELPER_LOGGING"
+	Standalone                  = "CREDENTIAL_HELPER_STANDALONE"
+	CredentialHelperInstallBase = "CREDENTIAL_HELPER_INSTALL_BASE"
+	CredentialHelperBin         = "CREDENTIAL_HELPER_BIN"
+	AgentSocketPath             = "CREDENTIAL_HELPER_AGENT_SOCKET"
+	AgentPidPath                = "CREDENTIAL_HELPER_AGENT_PID"
+	LogLevelEnv                 = "CREDENTIAL_HELPER_LOGGING"
 )
 
 // HelperFactory chooses a credential helper (like s3, gcs, github, ...) based on the raw uri.
