@@ -11,6 +11,7 @@ import (
 
 	"database/sql"
 
+	"github.com/tweag/credential-helper/agent/locate"
 	"github.com/tweag/credential-helper/api"
 	_ "modernc.org/sqlite"
 )
@@ -132,10 +133,10 @@ func dbPath() (string, error) {
 }
 
 func varDir() (string, error) {
-	cacheDir, err := os.UserCacheDir()
+	base, err := locate.Base()
 	if err != nil {
 		return "", err
 	}
 
-	return path.Join(cacheDir, "credential-helper", "var"), nil
+	return path.Join(base, "var"), nil
 }

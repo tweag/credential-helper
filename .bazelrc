@@ -1,0 +1,4 @@
+# To update these lines, execute
+# `bazel run @rules_bazel_integration_test//tools:update_deleted_packages`
+build --deleted_packages=examples/customized,examples/customized/helper/authenticate,examples/customized/helper/cache,examples/customized/helper/helperfactory,examples/full
+query --deleted_packages=examples/customized,examples/customized/helper/authenticate,examples/customized/helper/cache,examples/customized/helper/helperfactory,examples/full

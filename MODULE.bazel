@@ -21,3 +21,25 @@ use_repo(
     "io_k8s_sigs_yaml",
     "org_golang_x_oauth2",
 )
+
+# ✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂
+# only dev_dependencies below this line
+# ✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂✂
+
+bazel_dep(
+    name = "rules_bazel_integration_test",
+    version = "0.27.0",
+    dev_dependency = True,
+)
+
+bazel_binaries = use_extension(
+    "@rules_bazel_integration_test//:extensions.bzl",
+    "bazel_binaries",
+    dev_dependency = True,
+)
+bazel_binaries.download(version = "7.0.0")
+bazel_binaries.download(version = "7.4.1")
+bazel_binaries.download(version = "8.0.0rc6")
+bazel_binaries.download(version = "latest")
+bazel_binaries.download(version = "last_green")
+use_repo(bazel_binaries, "bazel_binaries", "bazel_binaries_bazelisk", "build_bazel_bazel_7_0_0", "build_bazel_bazel_7_4_1", "build_bazel_bazel_8_0_0rc6", "build_bazel_bazel_last_green", "build_bazel_bazel_latest")

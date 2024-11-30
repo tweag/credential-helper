@@ -23,3 +23,13 @@ installer(
     name = "custom_installer",
     credential_helper = ":custom_credential_helper",
 )
+
+sh_test(
+    name = "check_httpbin_basic_auth",
+    srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
+    args = [
+        "$(location @httpbin_basic_auth//file)",
+        "862df46c49d3993226614a265acc0460169eb9d16951d581e9f139153ad95138",
+    ],
+    data = ["@httpbin_basic_auth//file"],
+)

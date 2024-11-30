@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -28,7 +29,9 @@ type CachingAgent struct {
 
 func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache) (*CachingAgent, func() error, error) {
 	_ = os.MkdirAll(filepath.Dir(agentLockPath), 0o755)
-	_ = os.MkdirAll(filepath.Dir(socketPath), 0o755)
+	if !strings.HasPrefix(socketPath, "@") {
+		_ = os.MkdirAll(filepath.Dir(socketPath), 0o755)
+	}
 
 	agentLock, err := os.OpenFile(agentLockPath, os.O_RDWR|os.O_CREATE, 0o666)
 	if err != nil {
@@ -45,7 +48,9 @@ func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache) (
 	}
 
 	// delete the socket file if it already exists from a previous, dead agent
-	_ = os.Remove(socketPath)
+	if !strings.HasPrefix(socketPath, "@") {
+		_ = os.Remove(socketPath)
+	}
 
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {

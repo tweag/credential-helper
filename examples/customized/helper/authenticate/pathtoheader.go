@@ -2,7 +2,10 @@ package authenticate
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/tweag/credential-helper/api"
@@ -36,10 +39,18 @@ func (PathToHeader) Get(ctx context.Context, req api.GetCredentialsRequest) (api
 		return api.GetCredentialsResponse{}, error
 	}
 
+	headers := map[string][]string{"X-Tweag-Credential-Helper-Path": {parsedURL.Path}}
+
+	// implement httpbin basic-auth for testing
+	// parts: "", "basic-auth", username, password
+	bAuthUsernameAndPass := strings.Split(parsedURL.Path, "/")
+	if len(bAuthUsernameAndPass) == 4 && bAuthUsernameAndPass[1] == "basic-auth" {
+		bAuthCredentialsPlain := fmt.Sprintf("%s:%s", bAuthUsernameAndPass[2], bAuthUsernameAndPass[3])
+		headers["Authorization"] = []string{"Basic " + base64.StdEncoding.EncodeToString([]byte(bAuthCredentialsPlain))}
+	}
+
 	return api.GetCredentialsResponse{
 		Expires: time.Now().Add(time.Hour * 24).UTC().Format(time.RFC3339),
-		Headers: map[string][]string{
-			"X-Tweag-Credential-Helper-Path": {parsedURL.Path},
-		},
+		Headers: headers,
 	}, nil
 }

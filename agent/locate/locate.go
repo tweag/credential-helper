@@ -15,17 +15,23 @@ func Base() (string, error) {
 		return base, nil
 	}
 
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		return "", err
-	}
-
-	workspaceDirectory, ok := os.LookupEnv("BUILD_WORKSPACE_DIRECTORY")
+	// In Bazel integration tests we can't (and shouldn't)
+	// touch the user's home directory.
+	// Instead, we operate under $TEST_TMPDIR
+	var cacheDir string
+	var err error
+	cacheDir, ok := os.LookupEnv("TEST_TMPDIR")
 	if !ok {
-		workspaceDirectory, err = os.Getwd()
+		// On a normal run, we want to operate in $HOME/.cache (or $XDG_CACHE_HOME)
+		cacheDir, err = os.UserCacheDir()
 		if err != nil {
 			return "", err
 		}
+	}
+
+	workspaceDirectory, err := workspaceDirectory()
+	if err != nil {
+		return "", err
 	}
 
 	return path.Join(cacheDir, "tweag-credential-helper", installBasePathComponent(workspaceDirectory)), nil
@@ -71,6 +77,20 @@ func AgentPaths() (string, string, error) {
 	}
 	if !haveSocketPathFromEnv {
 		socketPath = path.Join(run, "agent.sock")
+		if len(socketPath) >= 108 {
+			// In many environments
+			// we are not allowed to use
+			// a socket path longer than 108 bytes
+			//
+			// in those cases, fall back to a unique
+			// abstract uds (prefixed with @ in Go)
+			workspaceDirectory, err := workspaceDirectory()
+			if err != nil {
+				return "", "", err
+			}
+			socketPath = "@" + installBasePathComponent(workspaceDirectory)
+		}
+
 	}
 	if !havePidPathFromEnv {
 		pidPath = path.Join(run, "agent.pid")
@@ -81,4 +101,16 @@ func AgentPaths() (string, string, error) {
 
 func installBasePathComponent(workspaceDirectory string) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(workspaceDirectory)))
+}
+
+func workspaceDirectory() (string, error) {
+	workspaceDirectory, ok := os.LookupEnv("BUILD_WORKSPACE_DIRECTORY")
+	if ok {
+		return workspaceDirectory, nil
+	}
+	workspaceDirectory, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return workspaceDirectory, nil
 }

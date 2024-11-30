@@ -35,6 +35,7 @@ filegroup(
         "//cmd:all_files",
         "//cmd/credential-helper:all_files",
         "//cmd/root:all_files",
+        "//examples/testing:all_files",
         "//helperfactory:all_files",
         "//helperfactory/fallback:all_files",
         "//installer:all_files",
@@ -42,4 +43,13 @@ filegroup(
         "//plugin:all_files",
     ],
     visibility = ["//:__subpackages__"],
+)
+
+test_suite(
+    name = "all_integration_tests",
+    tags = [
+        "exclusive",
+        "manual",
+    ],
+    tests = ["//examples:integration_tests"],
 )

@@ -69,7 +69,7 @@ func boundedLogLevel(numericLevel int) LogLevel {
 }
 
 func fPrintOut(format string, args ...any) {
-	fmt.Fprintf(os.Stdout, fmtWithNewline(format), args...)
+	fmt.Fprintf(os.Stderr, fmtWithNewline(format), args...)
 }
 
 func fmtWithNewline(format string) string {
