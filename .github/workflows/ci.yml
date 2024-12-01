@@ -45,7 +45,7 @@ jobs:
       shell: bash
       run: bazelisk test //:all_integration_tests
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   all_ci_tests:
     runs-on: ubuntu-22.04
