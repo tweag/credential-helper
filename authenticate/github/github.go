@@ -71,6 +71,8 @@ func (g *GitHubResolver) Get(ctx context.Context, req api.GetCredentialsRequest)
 		// this is fine
 	case strings.HasSuffix(strings.ToLower(parsedURL.Host), ".github.com"):
 		// this is fine
+	case strings.EqualFold(parsedURL.Host, "raw.githubusercontent.com"):
+		// this is fine
 	default:
 		return api.GetCredentialsResponse{}, errors.New("only github.com and subdomains are supported")
 	}

@@ -2,8 +2,8 @@ sh_test(
     name = "check_github_repo",
     srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
     args = [
-        "$(location @private_github_repo//:hello.txt)",
+        "$(location @private_github_repo_file//file)",
         "81e455883ec5c65337edd7bd1045b4fea50fef093b40636d96aa8001ebd54910",
     ],
-    data = ["@private_github_repo//:hello.txt"],
+    data = ["@private_github_repo_file//file"],
 )

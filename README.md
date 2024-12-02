@@ -73,6 +73,7 @@ Next configure Bazel to use the credential helper by adding the following to you
 ```
 # GitHub
 common --credential_helper=github.com=%workspace%/tools/credential-helper
+common --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper
 # GCS
 common --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
 # S3

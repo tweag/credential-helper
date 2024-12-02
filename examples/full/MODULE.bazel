@@ -12,18 +12,25 @@ local_path_override(
     path = "../..",
 )
 
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
-http_archive(
-    name = "private_github_repo",
-    build_file_content = """exports_files(glob(["**"]))""",
-    integrity = "sha256-/M5gC3mcEjAUvQtByW3jYMWnwR7eD3NTs7ZWUp2QcAI=",
-    strip_prefix = "credential-helper-private-0.0.1",
-    urls = ["https://github.com/tweag/credential-helper-private/archive/refs/tags/v0.0.1.tar.gz"],
+http_file(
+    name = "private_github_repo_file",
+    integrity = "sha256-geRViD7FxlM37de9EEW0/qUP7wk7QGNtlqqAAevVSRA=",
+    urls = ["https://raw.githubusercontent.com/tweag/credential-helper-private/606312d9f8467ed4368cf8b126b95c161ba5de28/hello.txt"],
 )
 
 # temporarily removed until CI has required access
-# http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+# http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# http_archive(
+#     name = "private_github_repo",
+#     build_file_content = """exports_files(glob(["**"]))""",
+#     integrity = "sha256-/M5gC3mcEjAUvQtByW3jYMWnwR7eD3NTs7ZWUp2QcAI=",
+#     strip_prefix = "credential-helper-private-0.0.1",
+#     urls = ["https://github.com/tweag/credential-helper-private/archive/refs/tags/v0.0.1.tar.gz"],
+# )
+
 # 
 # http_file(
 #     name = "hello_world_s3",
