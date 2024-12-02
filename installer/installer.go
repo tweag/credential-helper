@@ -17,9 +17,11 @@ func main() {
 	if err != nil {
 		fatalFmt("Failed to find %s: %v", pathFromEnv, err)
 	}
-
 	if _, err := os.Stat(path); err != nil {
 		fatalFmt("Failed to stat %s: %v", path, err)
+	}
+	if err := locate.SetupEnvironment(); err != nil {
+		fatalFmt("Failed to setup environment %s: %v", path, err)
 	}
 	destination, err := install(path)
 	if err != nil {
@@ -29,10 +31,7 @@ func main() {
 }
 
 func install(credentialHelperBin string) (string, error) {
-	destination, err := locate.CredentialHelper()
-	if err != nil {
-		return "", err
-	}
+	destination := locate.CredentialHelper()
 	if err := os.MkdirAll(path.Dir(destination), 0o755); err != nil {
 		return "", err
 	}

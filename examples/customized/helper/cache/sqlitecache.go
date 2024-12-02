@@ -22,10 +22,7 @@ type SqliteCache struct {
 }
 
 func NewSqliteCache() api.Cache {
-	dbFilePath, err := dbPath()
-	if err != nil {
-		panic(fmt.Sprintf("failed to find database path: %v", err))
-	}
+	dbFilePath := dbPath()
 	if dbFilePath != ":memory:" {
 		os.MkdirAll(path.Dir(dbFilePath), os.ModePerm)
 	}
@@ -119,24 +116,6 @@ func (c *SqliteCache) Prune(_ context.Context) error {
 	return nil
 }
 
-func dbPath() (string, error) {
-	dbPath, ok := os.LookupEnv("CREDENTIAL_HELPER_DB_PATH")
-	run, err := varDir()
-	if err != nil {
-		return "", err
-	}
-	if !ok {
-		dbPath = path.Join(run, "database.sqlite")
-	}
-
-	return dbPath, err
-}
-
-func varDir() (string, error) {
-	base, err := locate.Base()
-	if err != nil {
-		return "", err
-	}
-
-	return path.Join(base, "var"), nil
+func dbPath() string {
+	return locate.LookupPathEnv("CREDENTIAL_HELPER_DB_PATH", path.Join("%workdir%", "var", "database.sqlite"), false)
 }

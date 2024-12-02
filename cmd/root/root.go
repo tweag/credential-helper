@@ -26,6 +26,9 @@ func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewC
 		os.Exit(1)
 	}
 	setLogLevel()
+	if err := locate.SetupEnvironment(); err != nil {
+		logging.Fatalf("setting up process environment: %v", err)
+	}
 	command := os.Args[1]
 	switch command {
 	case "get":
@@ -121,10 +124,7 @@ func launchOrConnectAgent() (api.Cache, func() error, error) {
 
 	logging.Debugf("launched agent")
 
-	sockPath, _, err := locate.AgentPaths()
-	if err != nil {
-		return nil, func() error { return nil }, err
-	}
+	sockPath, _ := locate.AgentPaths()
 	logging.Debugf("connecting to agent at %s", sockPath)
 	socketCache, err := cache.NewSocketCache(sockPath, time.Second)
 	if err != nil {
@@ -148,10 +148,7 @@ func clientProcess(ctx context.Context, helperFactory api.HelperFactory) {
 }
 
 func clientCommandProcess(command string, r io.Reader) {
-	socketPath, _, err := locate.AgentPaths()
-	if err != nil {
-		logging.Fatalf("%v", err)
-	}
+	socketPath, _ := locate.AgentPaths()
 	conn, err := agent.NewAgentCommandClient(socketPath)
 	if err != nil {
 		if command == api.AgentRequestShutdown {
@@ -186,10 +183,7 @@ func agentProcess(ctx context.Context, newCache api.NewCache) {
 		logging.Fatalf("running as agent is not supported in standalone mode")
 	}
 
-	sockPath, pidPath, err := locate.AgentPaths()
-	if err != nil {
-		logging.Fatalf("%v", err)
-	}
+	sockPath, pidPath := locate.AgentPaths()
 	service, cleanup, err := agent.NewCachingAgent(sockPath, pidPath, newCache())
 	if err != nil {
 		logging.Fatalf("%v", err)
