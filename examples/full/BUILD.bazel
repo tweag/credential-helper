@@ -7,3 +7,23 @@ sh_test(
     ],
     data = ["@private_github_repo_file//file"],
 )
+
+sh_test(
+    name = "check_s3",
+    srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
+    args = [
+        "$(location @hello_world_s3//file)",
+        "3cf3250d34148d3fe03c4a8eb1a38695b969ff96ec6bfce5f9f544279fb2a5df",
+    ],
+    data = ["@hello_world_s3//file"],
+)
+
+sh_test(
+    name = "check_gcs",
+    srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
+    args = [
+        "$(location @hello_world_gcs//file)",
+        "fcb96ae418b863eb93883a94cc39f81545cfdf97e20d292ed1bd8f78a153cedc",
+    ],
+    data = ["@hello_world_gcs//file"],
+)
