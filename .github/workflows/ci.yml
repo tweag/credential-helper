@@ -35,9 +35,15 @@ jobs:
         runner: [macos-13, macos-15, ubuntu-22.04]
     runs-on: ${{ matrix.runner }}
     permissions:
+      id-token: write
       contents: read
     steps:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-to-assume: arn:aws:iam::381492153904:role/git-s3-access
+        aws-region: us-east-1
     - uses: cgrindel/gha_set_up_bazel@v1
       with:
         repo_name: credential-helper
