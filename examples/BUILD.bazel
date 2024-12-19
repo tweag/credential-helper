@@ -30,6 +30,11 @@ default_test_runner(
 bazel_integration_tests(
     name = "full_test",
     additional_env_inherit = [
+        "AWS_DEFAULT_REGION",
+        "AWS_REGION",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_SESSION_TOKEN",
         "CREDENTIAL_HELPER_LOGGING",
         "GH_TOKEN",
         "GITHUB_TOKEN",
