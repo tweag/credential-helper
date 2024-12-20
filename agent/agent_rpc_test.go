@@ -6,6 +6,7 @@ import (
 	"net"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tweag/credential-helper/cache"
@@ -194,9 +195,11 @@ func setup() (CachingAgent, *testListener) {
 	lis := newTestListener()
 
 	return CachingAgent{
-		cache:        cache.NewMemCache(),
-		lis:          lis,
-		shutdownChan: make(chan struct{}),
+		cache:         cache.NewMemCache(),
+		lis:           lis,
+		shutdownChan:  make(chan struct{}),
+		idleTimeout:   -time.Microsecond, // disable idle timeout for test
+		pruneInterval: -time.Microsecond, // disable pruning schedule for test
 	}, lis
 }
 
