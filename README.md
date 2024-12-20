@@ -105,6 +105,8 @@ The following options exist:
   Log level of the credential helper. Debug may expose sensitive information. Default is off.
 - `$CREDENTIAL_HELPER_IDLE_TIMEOUT`:
   Idle timeout of the agent in [Go duration format][go_duration]. The agent will run in the background and wait for connections until the idle timeout is reached. Defaults to 3h. A negative value disables idle shutdowns.
+- `$CREDENTIAL_HELPER_PRUNE_INTERVAL`:
+  Duration between cache prunes in [Go duration format][go_duration]. Defaults to 1m. A negative value disables cache pruning.
 
 
 ## Troubleshooting

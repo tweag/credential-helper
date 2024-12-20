@@ -27,10 +27,12 @@ type CachingAgent struct {
 	shutdownStarted atomic.Bool
 	idleTimeout     time.Duration
 	idleTimer       *time.Timer
+	pruneInterval   time.Duration
+	pruneTimer      *time.Timer
 	wg              sync.WaitGroup
 }
 
-func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache, idleTimeout time.Duration) (*CachingAgent, func() error, error) {
+func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache, idleTimeout time.Duration, pruneInterval time.Duration) (*CachingAgent, func() error, error) {
 	hardenAgentProcess()
 
 	_ = os.MkdirAll(filepath.Dir(agentLockPath), 0o755)
@@ -62,11 +64,12 @@ func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache, i
 		return nil, func() error { return nil }, err
 	}
 	agent := &CachingAgent{
-		cache:        cache,
-		lis:          listener,
-		lockFile:     agentLock,
-		shutdownChan: make(chan struct{}),
-		idleTimeout:  idleTimeout,
+		cache:         cache,
+		lis:           listener,
+		lockFile:      agentLock,
+		shutdownChan:  make(chan struct{}),
+		idleTimeout:   idleTimeout,
+		pruneInterval: pruneInterval,
 	}
 	return agent, agent.cleanup, nil
 }
@@ -84,6 +87,7 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 	defer a.lis.Close()
 
 	a.idleTimer = time.NewTimer(a.idleTimeout)
+	a.pruneTimer = time.NewTimer(0)
 	acceptChan := make(chan net.Conn)
 	a.wg.Add(1)
 	go func() {
@@ -97,9 +101,25 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 		defer a.wg.Done()
 		<-a.idleTimer.C
 		// use negative idleTimeout value to ignore the timeout signal
-		if a.idleTimeout >= 0 {
+		if a.idleTimeout >= 0 && !a.shutdownStarted.Load() {
 			logging.Debugf("agent shutting down after idle timeout of %v reached", a.idleTimeout)
 			_, _ = a.handleShutdown()
+		}
+	}()
+
+	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+		for !a.shutdownStarted.Load() {
+			<-a.pruneTimer.C
+			// use negative pruneInterval value to ignore the signal
+			if a.pruneInterval >= 0 && !a.shutdownStarted.Load() {
+				logging.Debugf("pruning the cache")
+				if err := a.cache.Prune(ctx); err != nil {
+					logging.Errorf("scheduled cache prune: %v\n", err)
+				}
+			}
+			a.pruneTimer.Reset(a.pruneInterval)
 		}
 	}()
 
@@ -234,9 +254,11 @@ func (a *CachingAgent) handleShutdown() (api.AgentResponse, error) {
 	}
 	logging.Basicf("shutting down")
 
-	// force timeout tracking goroutine to stop early
+	// force timer goroutines to stop early
 	a.idleTimeout = -time.Microsecond
 	a.idleTimer.Reset(a.idleTimeout)
+	a.pruneInterval = -time.Microsecond
+	a.pruneTimer.Reset(a.pruneInterval)
 
 	close(a.shutdownChan)
 	return api.AgentResponse{Status: api.AgentResponseOK}, nil
