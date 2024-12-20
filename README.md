@@ -1,6 +1,6 @@
 # credential-helper
 
-A framework and agent for the [credential-helper spec][spec].
+A credential-helper framework and agent for [Bazel](https://bazel.build/) and similar tools implementing the [credential-helper spec][spec].
 
 ## Key Features
 
@@ -20,7 +20,7 @@ graph LR
 
 Bazel[Bazel process]
 Helper[Credential Helper Process]
-Agent["Agent (listens on unix socket)"]
+Agent["Agent (listens on socket)"]
 ```
 
 The credential helper follows a simple architecture:
