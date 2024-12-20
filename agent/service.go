@@ -13,6 +13,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"syscall"
+	"time"
 
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/logging"
@@ -24,10 +25,12 @@ type CachingAgent struct {
 	lockFile        *os.File
 	shutdownChan    chan struct{}
 	shutdownStarted atomic.Bool
+	idleTimeout     time.Duration
+	idleTimer       *time.Timer
 	wg              sync.WaitGroup
 }
 
-func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache) (*CachingAgent, func() error, error) {
+func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache, idleTimeout time.Duration) (*CachingAgent, func() error, error) {
 	hardenAgentProcess()
 
 	_ = os.MkdirAll(filepath.Dir(agentLockPath), 0o755)
@@ -63,6 +66,7 @@ func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache) (
 		lis:          listener,
 		lockFile:     agentLock,
 		shutdownChan: make(chan struct{}),
+		idleTimeout:  idleTimeout,
 	}
 	return agent, agent.cleanup, nil
 }
@@ -72,19 +76,31 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 
 	defer func() {
 		// TODO: perform error handling including acceptErr and anything that happens in handleConn
-		if acceptErr != nil {
+		if acceptErr != nil && !errors.Is(acceptErr, net.ErrClosed) {
 			logging.Errorf("failed to accept connection: %v\n", acceptErr)
 		}
 	}()
 	defer a.wg.Wait()
 	defer a.lis.Close()
 
+	a.idleTimer = time.NewTimer(a.idleTimeout)
 	acceptChan := make(chan net.Conn)
 	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
 		// TODO: error handling
 		acceptErr = acceptLoop(a.lis, acceptChan)
+	}()
+
+	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+		<-a.idleTimer.C
+		// use negative idleTimeout value to ignore the timeout signal
+		if a.idleTimeout >= 0 {
+			logging.Debugf("agent shutting down after idle timeout of %v reached", a.idleTimeout)
+			_, _ = a.handleShutdown()
+		}
 	}()
 
 	for {
@@ -128,6 +144,9 @@ func (a *CachingAgent) handleConn(ctx context.Context, conn net.Conn) {
 			}
 			return
 		}
+		// reset the timeout for each request in a connection
+		// allows for correct keepalive when using long-living connections
+		a.idleTimer.Reset(a.idleTimeout)
 		logging.Debugf("received request: { method: %q, payload: %s }\n", req.Method, string(req.Payload))
 
 		var resp api.AgentResponse
@@ -214,6 +233,11 @@ func (a *CachingAgent) handleShutdown() (api.AgentResponse, error) {
 		return api.AgentResponse{Status: api.AgentResponseOK}, nil
 	}
 	logging.Basicf("shutting down")
+
+	// force timeout tracking goroutine to stop early
+	a.idleTimeout = -time.Microsecond
+	a.idleTimer.Reset(a.idleTimeout)
+
 	close(a.shutdownChan)
 	return api.AgentResponse{Status: api.AgentResponseOK}, nil
 }

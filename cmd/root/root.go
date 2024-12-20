@@ -184,7 +184,11 @@ func agentProcess(ctx context.Context, newCache api.NewCache) {
 	}
 
 	sockPath, pidPath := locate.AgentPaths()
-	service, cleanup, err := agent.NewCachingAgent(sockPath, pidPath, newCache())
+	timeout, err := idleTimeout()
+	if err != nil {
+		logging.Fatalf("determining idle timeout from $%s: %v", api.IdleTimeoutEnv, err)
+	}
+	service, cleanup, err := agent.NewCachingAgent(sockPath, pidPath, newCache(), timeout)
 	if err != nil {
 		logging.Fatalf("%v", err)
 	}
@@ -208,4 +212,12 @@ func setLogLevel() {
 		return
 	}
 	logging.SetLevel(logging.FromString(level))
+}
+
+func idleTimeout() (time.Duration, error) {
+	timeoutString, ok := os.LookupEnv(api.IdleTimeoutEnv)
+	if !ok {
+		return 3 * time.Hour, nil
+	}
+	return time.ParseDuration(timeoutString)
 }

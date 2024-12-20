@@ -103,6 +103,8 @@ The following options exist:
   Path of the agent pid file. If not set, the helper will use the default path `${HOME}/.cache/tweag-credential-helper/run/agent.pid`
 - `$CREDENTIAL_HELPER_LOGGING=off|basic|debug`
   Log level of the credential helper. Debug may expose sensitive information. Default is off.
+- `$CREDENTIAL_HELPER_IDLE_TIMEOUT`:
+  Idle timeout of the agent in [Go duration format][go_duration]. The agent will run in the background and wait for connections until the idle timeout is reached. Defaults to 3h. A negative value disables idle shutdowns.
 
 
 ## Troubleshooting
@@ -127,3 +129,4 @@ The following options exist:
 
 [spec]: https://github.com/EngFlow/credential-helper-spec
 [releases]: https://github.com/tweag/credential-helper/releases
+[go_duration]: https://pkg.go.dev/time#ParseDuration
