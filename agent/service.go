@@ -28,6 +28,8 @@ type CachingAgent struct {
 }
 
 func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache) (*CachingAgent, func() error, error) {
+	hardenAgentProcess()
+
 	_ = os.MkdirAll(filepath.Dir(agentLockPath), 0o755)
 	if !strings.HasPrefix(socketPath, "@") {
 		_ = os.MkdirAll(filepath.Dir(socketPath), 0o755)
