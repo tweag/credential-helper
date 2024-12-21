@@ -7,6 +7,9 @@ load(
     "integration_test_utils",
 )
 
+# gazelle:exclude customized
+# gazelle:exclude full
+
 default_test_runner(
     name = "default_test_runner",
     bazel_cmds = [
