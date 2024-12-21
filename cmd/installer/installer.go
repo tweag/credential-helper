@@ -1,29 +1,40 @@
-package main
+package installer
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 
-	"github.com/bazelbuild/rules_go/go/runfiles"
 	"github.com/tweag/credential-helper/agent/locate"
 )
 
-// TODO: make this a subcommand of the helper binary
-// to allow for a single-binary bootstrap.
-func main() {
-	pathFromEnv := os.Getenv("CREDENTIAL_HELPER_INSTALLER_SOURCE")
-	path, err := runfiles.Rlocation(pathFromEnv)
-	if err != nil {
-		fatalFmt("Failed to find %s: %v", pathFromEnv, err)
+func InstallerProcess() {
+	path, havePathFromEnv := os.LookupEnv("CREDENTIAL_HELPER_INSTALLER_SOURCE")
+	if !havePathFromEnv {
+		var getOwnPathErr error
+		path, getOwnPathErr = os.Executable()
+		if getOwnPathErr != nil {
+			fatalFmt("finding path to own executable: %v", getOwnPathErr)
+		}
+	}
+	var derefSymlinkErr error
+	path, derefSymlinkErr = filepath.EvalSymlinks(path)
+	if derefSymlinkErr != nil {
+		fatalFmt("following source path symlink %s: %v", path, derefSymlinkErr)
 	}
 	if _, err := os.Stat(path); err != nil {
-		fatalFmt("Failed to stat %s: %v", path, err)
+		fatalFmt("checking if install source exists %s: %v", path, err)
+	}
+	var absolutizeErr error
+	path, absolutizeErr = filepath.Abs(path)
+	if absolutizeErr != nil {
+		fatalFmt("getting absolute path: %v", absolutizeErr)
 	}
 	if err := locate.SetupEnvironment(); err != nil {
-		fatalFmt("Failed to setup environment %s: %v", path, err)
+		fatalFmt("setting up environment: %v", err)
 	}
 	destination, err := install(path)
 	if err != nil {
@@ -46,13 +57,15 @@ func install(credentialHelperBin string) (string, error) {
 		fmt.Fprintf(os.Stderr, "Shutting down old agent before uninstall: %s", shutdownOut)
 	}
 
-	_ = os.Remove(destination)
+	if err := os.Remove(destination); err != nil && !os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "Removing old agent: %v", err)
+	}
 	return destination, os.Link(credentialHelperBin, destination)
 }
 
 func attemptAgentShutdown(agentPath string) string {
 	out, err := exec.Command(agentPath, "agent-shutdown").CombinedOutput()
-	if err != nil {
+	if err == nil {
 		return ""
 	}
 	return string(out)
@@ -64,4 +77,13 @@ func fatalFmt(format string, args ...any) {
 	}
 	fmt.Fprintf(os.Stderr, format, args...)
 	os.Exit(1)
+}
+
+func WantInstallerRun() bool {
+	// To avoid recursively starting the installer
+	// when trying to stop the agent,
+	// we unset this env var after checking for it.
+	want := os.Getenv("CREDENTIAL_HELPER_INSTALLER_RUN") == "1"
+	_ = os.Unsetenv("CREDENTIAL_HELPER_INSTALLER_RUN")
+	return want
 }

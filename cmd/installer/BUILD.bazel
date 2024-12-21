@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "installer",
+    srcs = ["installer.go"],
+    importpath = "github.com/tweag/credential-helper/cmd/installer",
+    visibility = ["//visibility:public"],
+    deps = ["//agent/locate"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)
