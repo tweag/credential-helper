@@ -1,0 +1,107 @@
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load(":defs.bzl", "PLATFORMS", "go_to_constraint_value", "release_files", "release_platform_flag", "source_bundle", name = "platform_name")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+[
+    platform(
+        name = name(p),
+        constraint_values = [go_to_constraint_value[goname] for goname in p],
+    )
+    for p in PLATFORMS
+]
+
+release_platform_flag(
+    name = "release_platform",
+    build_setting_default = "linux_amd64",
+)
+
+release_files(
+    name = "release",
+    basename = "helper",
+    executable = "//:tweag-credential-helper",
+    shell_stub = "//:tools/credential-helper",
+    tags = ["manual"],
+)
+
+# This target collects all of the parent workspace files.
+filegroup(
+    name = "local_repository_files",
+    srcs = [
+        "//:all_files",
+        "//agent:all_files",
+        "//agent/locate:all_files",
+        "//api:all_files",
+        "//authenticate/gcs:all_files",
+        "//authenticate/github:all_files",
+        "//authenticate/null:all_files",
+        "//authenticate/s3:all_files",
+        "//cache:all_files",
+        "//cmd:all_files",
+        "//cmd/credential-helper:all_files",
+        "//cmd/root:all_files",
+        "//examples/testing:all_files",
+        "//helperfactory:all_files",
+        "//helperfactory/fallback:all_files",
+        "//installer:all_files",
+        "//logging:all_files",
+        "//plugin:all_files",
+        "//private:all_files",
+        "//private/release:all_files",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+# This target collects all files needed by consumers
+# - users of the credential helper with a bazel_dep targeting it
+# - integration tests under //examples
+filegroup(
+    name = "release_src_files",
+    srcs = [
+        "//:all_files",
+        "//agent:all_files",
+        "//agent/locate:all_files",
+        "//api:all_files",
+        "//authenticate/gcs:all_files",
+        "//authenticate/github:all_files",
+        "//authenticate/null:all_files",
+        "//authenticate/s3:all_files",
+        "//cache:all_files",
+        "//cmd:all_files",
+        "//cmd/credential-helper:all_files",
+        "//cmd/root:all_files",
+        "//helperfactory:all_files",
+        "//helperfactory/fallback:all_files",
+        "//installer:all_files",
+        "//logging:all_files",
+        "//plugin:all_files",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+source_bundle(
+    name = "srcs",
+    srcs = [":release_src_files"],
+)
+
+pkg_tar(
+    name = "src_tar",
+    out = "tweag-credential-helper.tar.xz",
+    extension = "tar.xz",
+    srcs = [":srcs"],
+)
+
+pkg_tar(
+    name = "dist_tar",
+    out = "dist.tar",
+    srcs = [":release", "src_tar"],
+    tags = ["manual"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

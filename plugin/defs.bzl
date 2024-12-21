@@ -49,7 +49,7 @@ def _credential_helper_plugin_impl(ctx):
     ctx.actions.expand_template(
         template = ctx.file.template,
         output = ctx.outputs.out,
-        substitutions = { 
+        substitutions = {
             "{{IMPORTPATH}}": go_info.importpath,
             "{{TYPE_NAME}}": ctx.attr.type_name,
         },
@@ -100,7 +100,7 @@ def _installer_impl(ctx):
     }
     for k, v in ctx.attr.env.items():
         env[k] = ctx.expand_location(v, [ctx.attr.credential_helper])
-    
+
     return [
         DefaultInfo(
             files = depset([installer]),
@@ -136,3 +136,10 @@ installer = rule(
     },
     executable = True,
 )
+
+# TODO: allow using prebuilt credential_helper
+# and have convenience method with hashes and URLs
+# in release tar
+# prebuilt_credential_helper = repository_rule(
+#
+# )
