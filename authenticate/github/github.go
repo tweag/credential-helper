@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -158,14 +159,34 @@ func (g *GitHubTokenSource) Token() (*oauth2.Token, error) {
 	}
 	return &oauth2.Token{
 		AccessToken: g.token,
-		// TODO: guess or check the expiry time
-		// this can be done by sending an authenticated request to
-		// https://api.github.com/rate_limit
-		// and checking for the response header
-		// github-authentication-token-expiration
-		// but does not work for all kinds of tokens
+		Expiry:      g.checkTokenExpiration(),
 		// TODO: add method to reload token from disk
+		// in case this token is known to have expired
 	}, nil
+}
+
+// checkTokenExpiration uses the `/rate_limit` api endpoint to
+// query for the token expiration.
+// May return zero time if this information is not provided.
+func (g *GitHubTokenSource) checkTokenExpiration() time.Time {
+	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/rate_limit", http.NoBody)
+	if err != nil {
+		return time.Time{}
+	}
+	req.Header["Authorization"] = []string{"Bearer " + g.token}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return time.Time{}
+	}
+	expirationStr := resp.Header.Get("GitHub-Authentication-Token-Expiration")
+	if expiration, err := time.Parse("2006-01-02 03:04:05 -0700", expirationStr); err == nil {
+		return expiration.UTC()
+	}
+	// fallback to unknown expiration
+	// since this response header is not provided for
+	// every kind of token
+	// (and some do not expire at all, unless manually revoked)
+	return time.Time{}
 }
 
 type HostsFile map[string]HostConfig
