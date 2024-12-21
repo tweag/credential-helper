@@ -10,6 +10,7 @@ go_library(
         "//agent/locate",
         "//api",
         "//cache",
+        "//cmd/installer",
         "//logging",
     ],
 )

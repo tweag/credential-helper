@@ -14,6 +14,7 @@ import (
 	"github.com/tweag/credential-helper/agent/locate"
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/cache"
+	"github.com/tweag/credential-helper/cmd/installer"
 	"github.com/tweag/credential-helper/logging"
 )
 
@@ -21,15 +22,19 @@ const usage = `Usage:
   credential-helper get`
 
 func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewCache, args []string) {
-	if len(os.Args) < 2 {
+	setLogLevel()
+	if len(args) < 2 {
+		if installer.WantInstallerRun() {
+			installer.InstallerProcess()
+			return
+		}
 		fmt.Fprintln(os.Stderr, usage)
 		os.Exit(1)
 	}
-	setLogLevel()
 	if err := locate.SetupEnvironment(); err != nil {
 		logging.Fatalf("setting up process environment: %v", err)
 	}
-	command := os.Args[1]
+	command := args[1]
 	switch command {
 	case "get":
 		clientProcess(ctx, helperFactory)
@@ -40,10 +45,12 @@ func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewC
 	case "agent-prune":
 		clientCommandProcess(api.AgentRequestPrune, nil)
 	case "agent-raw":
-		if len(os.Args) < 3 {
+		if len(args) < 3 {
 			logging.Fatalf("missing command argument")
 		}
-		clientCommandProcess(os.Args[2], os.Stdin)
+		clientCommandProcess(args[2], os.Stdin)
+	case "installer-install":
+		installer.InstallerProcess()
 	default:
 		logging.Fatalf("unknown command")
 	}

@@ -84,20 +84,14 @@ def _installer_impl(ctx):
     )
     ctx.actions.symlink(
         output = installer,
-        target_file = ctx.executable._installer_bin,
+        target_file = ctx.executable.credential_helper,
         is_executable=True,
     )
 
     runfiles = ctx.runfiles().merge_all([
         ctx.attr.credential_helper[DefaultInfo].default_runfiles,
-        ctx.attr._installer_bin[DefaultInfo].default_runfiles,
     ])
-    env = {
-        "CREDENTIAL_HELPER_INSTALLER_SOURCE": ctx.expand_location(
-            "$(rlocationpath {})".format(ctx.executable.credential_helper.owner),
-            [ctx.attr.credential_helper],
-        ),
-    }
+    env = {"CREDENTIAL_HELPER_INSTALLER_RUN": "1"}
     for k, v in ctx.attr.env.items():
         env[k] = ctx.expand_location(v, [ctx.attr.credential_helper])
 
@@ -127,11 +121,6 @@ installer = rule(
         ),
         "env_inherit": attr.string_list(
             doc = """Environment variables to inherit from the external environment.""",
-        ),
-        "_installer_bin": attr.label(
-            executable = True,
-            cfg = "target",
-            default = Label("@tweag-credential-helper//installer:installer_bin"),
         ),
     },
     executable = True,

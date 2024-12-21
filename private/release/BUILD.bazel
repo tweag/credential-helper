@@ -41,6 +41,7 @@ filegroup(
         "//cache:all_files",
         "//cmd:all_files",
         "//cmd/credential-helper:all_files",
+        "//cmd/installer:all_files",
         "//cmd/root:all_files",
         "//examples/testing:all_files",
         "//helperfactory:all_files",
@@ -71,6 +72,7 @@ filegroup(
         "//cache:all_files",
         "//cmd:all_files",
         "//cmd/credential-helper:all_files",
+        "//cmd/installer:all_files",
         "//cmd/root:all_files",
         "//helperfactory:all_files",
         "//helperfactory/fallback:all_files",
@@ -88,15 +90,18 @@ source_bundle(
 
 pkg_tar(
     name = "src_tar",
+    srcs = [":srcs"],
     out = "tweag-credential-helper.tar.xz",
     extension = "tar.xz",
-    srcs = [":srcs"],
 )
 
 pkg_tar(
     name = "dist_tar",
+    srcs = [
+        "src_tar",
+        ":release",
+    ],
     out = "dist.tar",
-    srcs = [":release", "src_tar"],
     tags = ["manual"],
 )
 
