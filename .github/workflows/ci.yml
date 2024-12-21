@@ -57,7 +57,7 @@ jobs:
         repo_name: credential-helper
     - name: Execute Integration Tests
       shell: bash
-      run: bazelisk test //:all_integration_tests
+      run: bazelisk test //examples:integration_tests
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
 

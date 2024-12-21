@@ -11,6 +11,8 @@ import (
 	"github.com/tweag/credential-helper/agent/locate"
 )
 
+// TODO: make this a subcommand of the helper binary
+// to allow for a single-binary bootstrap.
 func main() {
 	pathFromEnv := os.Getenv("CREDENTIAL_HELPER_INSTALLER_SOURCE")
 	path, err := runfiles.Rlocation(pathFromEnv)

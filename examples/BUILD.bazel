@@ -46,7 +46,8 @@ bazel_integration_tests(
     bazel_versions = bazel_binaries.versions.all,
     test_runner = ":default_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("full") + [
-        "//:local_repository_files",
+        "//examples/testing:all_files",
+        "//private/release:release_src_files",
     ],
     workspace_path = "full",
 )
@@ -59,7 +60,8 @@ bazel_integration_tests(
     env = {"CREDENTIAL_HELPER_LOGGING": "debug"},
     test_runner = ":customized_installer_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("customized") + [
-        "//:local_repository_files",
+        "//examples/testing:all_files",
+        "//private/release:release_src_files",
     ],
     workspace_path = "customized",
 )
