@@ -47,7 +47,7 @@ bazel_integration_tests(
     test_runner = ":default_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("full") + [
         "//examples/testing:all_files",
-        "//private/release:release_src_files",
+        "//bzl/private/source_files:release_src_files",
     ],
     workspace_path = "full",
 )
@@ -61,7 +61,7 @@ bazel_integration_tests(
     test_runner = ":customized_installer_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("customized") + [
         "//examples/testing:all_files",
-        "//private/release:release_src_files",
+        "//bzl/private/source_files:release_src_files",
     ],
     workspace_path = "customized",
 )
@@ -76,5 +76,11 @@ test_suite(
         "full_test",
         bazel_binaries.versions.all,
     ),
+    visibility = ["//:__subpackages__"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
     visibility = ["//:__subpackages__"],
 )

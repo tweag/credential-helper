@@ -1,0 +1,23 @@
+load(":defs.bzl", "os_cpu")
+
+os_cpu(
+    name = "target_os_cpu",
+    cpu = select({
+        "@platforms//cpu:arm64": "arm64",
+        "@platforms//cpu:x86_32": "386",
+        "@platforms//cpu:x86_64": "amd64",
+        "@platforms//cpu:riscv64": "riscv64",
+    }),
+    os = select({
+        "@platforms//os:linux": "linux",
+        "@platforms//os:macos": "darwin",
+        "@platforms//os:windows": "windows",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

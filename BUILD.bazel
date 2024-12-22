@@ -1,5 +1,5 @@
 load("@gazelle//:def.bzl", "gazelle")
-load("@tweag-credential-helper//plugin:defs.bzl", "credential_helper")
+load("@tweag-credential-helper//bzl:defs.bzl", "credential_helper")
 
 credential_helper(
     name = "tweag-credential-helper",
@@ -23,9 +23,13 @@ filegroup(
         "WORKSPACE",
         "go.mod",
         "go.sum",
+        "prebuilt_lockfile.json",
         "tools/credential-helper",
     ],
     visibility = ["//:__subpackages__"],
 )
 
-exports_files(["tools/credential-helper"])
+exports_files([
+    "prebuilt_lockfile.json",
+    "tools/credential-helper",
+])

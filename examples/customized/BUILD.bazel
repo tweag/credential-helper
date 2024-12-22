@@ -1,5 +1,5 @@
 load("@gazelle//:def.bzl", "gazelle")
-load("@tweag-credential-helper//plugin:defs.bzl", "credential_helper", "installer")
+load("@tweag-credential-helper//bzl:defs.bzl", "credential_helper", "installer")
 
 gazelle(name = "gazelle")
 

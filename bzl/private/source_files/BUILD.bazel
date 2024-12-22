@@ -1,0 +1,53 @@
+release_files = [
+    "//:all_files",
+    "//agent:all_files",
+    "//agent/locate:all_files",
+    "//api:all_files",
+    "//authenticate/gcs:all_files",
+    "//authenticate/github:all_files",
+    "//authenticate/null:all_files",
+    "//authenticate/s3:all_files",
+    "//bzl:all_files",
+    "//bzl/private:all_files",
+    "//bzl/private/config:all_files",
+    "//bzl/private/plugin:all_files",
+    "//bzl/private/prebuilt:all_files",
+    "//cache:all_files",
+    "//cmd:all_files",
+    "//cmd/credential-helper:all_files",
+    "//cmd/installer:all_files",
+    "//cmd/root:all_files",
+    "//helperfactory:all_files",
+    "//helperfactory/fallback:all_files",
+    "//installer:all_files",
+    "//logging:all_files",
+]
+
+dev_files = [
+    "//bzl/private/lockfile:all_files",
+    "//bzl/private/release:all_files",
+    "//examples:all_files",
+    "//examples/testing:all_files",
+]
+
+# This target collects all of the parent workspace files.
+filegroup(
+    name = "local_repository_files",
+    srcs = release_files + dev_files,
+    visibility = ["//:__subpackages__"],
+)
+
+# This target collects all files needed by consumers
+# - users of the credential helper with a bazel_dep targeting it
+# - integration tests under //examples
+filegroup(
+    name = "release_src_files",
+    srcs = release_files,
+    visibility = ["//:__subpackages__"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

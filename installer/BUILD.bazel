@@ -1,8 +1,9 @@
-load("@tweag-credential-helper//plugin:defs.bzl", "installer")
+load("@tweag-credential-helper//bzl:defs.bzl", "installer")
 
 installer(
     name = "installer",
     credential_helper = "@tweag-credential-helper",
+    prebuilt_helper_collection = "@tweag-credential-helper-prebuilt//:collection",
 )
 
 filegroup(
