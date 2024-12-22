@@ -20,7 +20,7 @@ go_library(
 
 # This creates a working, default credential helper
 # which does not allow customization.
-# Use //plugin:defs.bzl%credential_helper instead.
+# Use //bzl:defs.bzl%credential_helper instead.
 go_binary(
     name = "credential-helper",
     embed = [":credential-helper_lib"],

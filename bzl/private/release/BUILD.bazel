@@ -1,0 +1,72 @@
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load(":defs.bzl", "PLATFORMS", "do_a_release", "go_to_constraint_value", "release_files", "release_platform_flag", "source_bundle", "versioned_filename_info", name = "platform_name")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+[
+    platform(
+        name = name(p),
+        constraint_values = [go_to_constraint_value[goname] for goname in p],
+    )
+    for p in PLATFORMS
+]
+
+release_platform_flag(
+    name = "release_platform",
+    build_setting_default = "linux_amd64",
+)
+
+release_files(
+    name = "release",
+    basename = "helper",
+    executable = "//:tweag-credential-helper",
+    shell_stub = "//:tools/credential-helper",
+    tags = ["manual"],
+)
+
+source_bundle(
+    name = "srcs",
+    srcs = ["//bzl/private/source_files:release_src_files"],
+    overrides = [":release"],
+    tags = ["manual"],
+)
+
+pkg_tar(
+    name = "src_tar",
+    srcs = [":srcs"],
+    out = "tweag-credential-helper.tar.xz",
+    extension = "tar.xz",
+    tags = ["manual"],
+)
+
+versioned_filename_info(
+    name = "versioned_src_tar",
+    src = ":src_tar",
+    extension = "tar.xz",
+    tags = ["manual"],
+    destdir = "src",
+)
+
+pkg_tar(
+    name = "dist_tar",
+    srcs = [
+        "versioned_src_tar",
+        ":release",
+    ],
+    out = "dist.tar",
+    tags = ["manual"],
+)
+
+do_a_release(
+    name = "do_a_release",
+    dist_tar = ":dist_tar",
+    script = "do_a_release.sh",
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)
