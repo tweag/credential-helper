@@ -1,0 +1,18 @@
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+
+string_flag(
+    name = "helper_build_mode",
+    build_setting_default = "auto",
+    values = [
+        "auto",
+        "from_source",
+        "prebuilt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)
