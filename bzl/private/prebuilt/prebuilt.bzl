@@ -1,52 +1,50 @@
-PrebuiltHelperCollection = provider(
+PrebuiltHelperInfo = provider(
     doc = "A collection of prebuilt credential helper binaries",
     fields = {
-        "platform_to_helper": "Dict from platform tuples (GOOS, GOARCH) to prebuilt helper binary (File)",
+        "helper": "Optional File of the prebuilt helper for the target platform. Will be None of no helper is available for the platform",
     },
 )
 
-def _prebuilt_collection_impl(ctx):
-    platform_to_helper = {}
-    for item in ctx.attr.helpers.items():
-        os_arch = item[1].split("_")
-        os = os_arch[0]
-        arch = os_arch[1]
-        default_info = item[0][DefaultInfo]
-        files = default_info.files.to_list()
-        if len(files) != 1:
-            fail("expected single file for helper %s_%s of collection %s", (os, arch, ctx.attr.name))
-        platform_to_helper[(os, arch)] = files[0]
-    return [PrebuiltHelperCollection(platform_to_helper = platform_to_helper)]
+def _prebuilt_helper_info_impl(ctx):
+    return [PrebuiltHelperInfo(helper = ctx.file.helper)]
 
-prebuilt_collection = rule(
-    implementation = _prebuilt_collection_impl,
+prebuilt_helper_info = rule(
+    implementation = _prebuilt_helper_info_impl,
     attrs = {
-        "helpers": attr.label_keyed_string_dict(allow_files = True),
+        "helper": attr.label(
+            mandatory = False,
+            allow_single_file = True,
+        ),
     },
-    provides = [PrebuiltHelperCollection],
+    provides = [PrebuiltHelperInfo],
 )
 
 def _prebuilt_collection_hub_repo_impl(rctx):
+    select_arms = {"@rules_go//go/platform:" + k: v for (k,v) in rctx.attr.helpers.items()}
+    select_arms |= {"//conditions:default": None}
+    helper_rhs = "select({})".format(json.encode_indent(select_arms, prefix = "    ", indent = "    "))
+    helper_rhs = helper_rhs.replace("null", "None")
+    if len(rctx.attr.helpers) == 0:
+        # empty select is illegal, replace with explicit None
+        helper_rhs = "None"
     rctx.file(
         "BUILD.bazel",
-        """load("@tweag-credential-helper//bzl/private/prebuilt:prebuilt.bzl", "prebuilt_collection")
+        """load("@tweag-credential-helper//bzl/private/prebuilt:prebuilt.bzl", "prebuilt_helper_info")
 
-prebuilt_collection(
-    name = "collection",
-    helpers = {},
+prebuilt_helper_info(
+    name = "prebuilt_helper_info",
+    helper = {},
     visibility = ["//visibility:public"],
 )
-""".format(json.encode({str(k): v for (k,v) in rctx.attr.helpers.items()})),
+""".format(helper_rhs),
     )
 
 prebuilt_collection_hub_repo = repository_rule(
     implementation = _prebuilt_collection_hub_repo_impl,
-    attrs = {
-        "helpers": attr.label_keyed_string_dict(allow_files = True),
-    },
+    attrs = {"helpers": attr.string_dict()},
 )
 
-def _prebuilt_credential_helper_impl(rctx):
+def _prebuilt_credential_helper_repo_impl(rctx):
     urls = [template.format(
         version = rctx.attr.version,
         os = rctx.attr.os,
@@ -73,8 +71,8 @@ _prebuilt_attrs = {
     ),
 }
 
-prebuilt_credential_helper = repository_rule(
-    implementation = _prebuilt_credential_helper_impl,
+prebuilt_credential_helper_repo = repository_rule(
+    implementation = _prebuilt_credential_helper_repo_impl,
     attrs = _prebuilt_attrs,
 )
 
@@ -130,17 +128,17 @@ def _prebuilt_credential_helpers(ctx):
         root_module_direct_deps = for_root_module[1].keys()
 
     for item in requested_helpers.items():
-        prebuilt_credential_helper(
+        prebuilt_credential_helper_repo(
             name = item[0],
             **item[1],
         )
     for (collection_name, collection) in collections.items():
-        helpers_label_keyed_string_dict = {}
+        helpers = {}
         for ((os, arch), helper_repo_name) in collection["helpers"].items():
-            helpers_label_keyed_string_dict["@%s//:helper" % helper_repo_name] = "%s_%s" % (os, arch)
+            helpers["%s_%s" % (os, arch) ] = "@%s//:helper" % helper_repo_name
         prebuilt_collection_hub_repo(
             name = collection_name,
-            helpers = helpers_label_keyed_string_dict,
+            helpers = helpers,
         )
 
     return ctx.extension_metadata(

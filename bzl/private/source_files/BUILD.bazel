@@ -8,6 +8,7 @@ release_files = [
     "//authenticate/null:all_files",
     "//authenticate/s3:all_files",
     "//bzl:all_files",
+    "//bzl/config:all_files",
     "//bzl/private:all_files",
     "//bzl/private/config:all_files",
     "//bzl/private/plugin:all_files",

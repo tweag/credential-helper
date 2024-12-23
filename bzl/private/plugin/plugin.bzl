@@ -1,6 +1,7 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library", "GoLibrary")
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//bzl/private/config:defs.bzl", "HelperTargetPlatformInfo")
-load("//bzl/private/prebuilt:prebuilt.bzl", "PrebuiltHelperCollection")
+load("//bzl/private/prebuilt:prebuilt.bzl", "PrebuiltHelperInfo")
 
 def credential_helper(
     *,
@@ -80,19 +81,41 @@ credential_helper_plugin = rule(
 )
 
 def _installer_impl(ctx):
-    if ctx.attr.prebuilt_helper_collection != None:
-        prebuilt_helper_collection = ctx.attr.prebuilt_helper_collection[PrebuiltHelperCollection].platform_to_helper
-    else:
-        prebuilt_helper_collection = {}
+    build_mode = ctx.attr._helper_build_mode[BuildSettingInfo].value
+    allow_from_source = False
+    allow_prebuilt = False
+    if build_mode == "auto":
+        allow_from_source = True
+        allow_prebuilt = True
+    elif build_mode == "from_source":
+        allow_from_source = True
+        allow_prebuilt = False
+    elif build_mode == "prebuilt":
+        allow_from_source = False
+        allow_prebuilt = True
+
+    prebuilt_helper = None
+    if ctx.attr.prebuilt_helper != None:
+        prebuilt_helper = ctx.attr.prebuilt_helper[PrebuiltHelperInfo].helper
     target_platform_info = ctx.attr._os_cpu[HelperTargetPlatformInfo]
     os = target_platform_info.os
     cpu = target_platform_info.cpu
 
-    # default to use helper from source
-    helper = ctx.executable.credential_helper
-    if (os, cpu) in prebuilt_helper_collection:
-        # use prebuilt helper if possible
-        helper = prebuilt_helper_collection[(os, cpu)]
+    helper = None
+    # fall back to use helper from source (if available and allowed)
+    if allow_from_source and ctx.executable.credential_helper != None:
+        helper = ctx.executable.credential_helper
+
+    # use prebuilt helper instead (if available for platform and allowed)
+    if allow_prebuilt and prebuilt_helper != None:
+        helper = prebuilt_helper
+
+    if helper == None:
+        if build_mode == "from_source":
+            fail("Requested helper to be built from source, but none avalable in installer(name = \"%s\"). Configure one via the credential_helper label." % ctx.attr.name)
+        if build_mode == "prebuilt":
+            fail("Requested prebuilt helper but no matching prebuilt helper binary available for platform %s_%s in installer(name = \"%s\"). Register a matching prebuilt or allow building from source." % (os, cpu, ctx.attr.name))
+        fail("No matching helper binary available in installer(name = \"%s\")" % ctx.attr.name)
 
     installer = ctx.actions.declare_file(
         ctx.attr.name + ".link",
@@ -129,15 +152,19 @@ installer = rule(
             cfg = "target",
             default = Label("@tweag-credential-helper"),
         ),
-        "prebuilt_helper_collection": attr.label(
+        "prebuilt_helper": attr.label(
             mandatory = False,
-            providers = [PrebuiltHelperCollection],
+            providers = [PrebuiltHelperInfo],
         ),
         "env": attr.string_dict(
             doc = """Environment variables to set for the test execution.""",
         ),
         "env_inherit": attr.string_list(
             doc = """Environment variables to inherit from the external environment.""",
+        ),
+        "_helper_build_mode": attr.label(
+            default = Label("//bzl/config:helper_build_mode"),
+            providers = [BuildSettingInfo],
         ),
         "_os_cpu": attr.label(
             default = Label("//bzl/private/config:target_os_cpu"),
