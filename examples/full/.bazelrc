@@ -3,4 +3,5 @@ common --credential_helper=github.com=%workspace%/tools/credential-helper
 common --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper
 common --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper
 common --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper
+common --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper
 common --test_output=errors

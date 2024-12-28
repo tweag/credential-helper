@@ -60,6 +60,8 @@ jobs:
       run: bazelisk test //examples:integration_tests
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+        R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
 
   all_ci_tests:
     runs-on: ubuntu-22.04

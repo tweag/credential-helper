@@ -19,6 +19,16 @@ sh_test(
 )
 
 sh_test(
+    name = "check_r2",
+    srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
+    args = [
+        "$(location @hello_world_r2//file)",
+        "df4bf34acd7328fa6f0b6913dcc56b450b6888a562718c8bf970e9b9685114f5",
+    ],
+    data = ["@hello_world_r2//file"],
+)
+
+sh_test(
     name = "check_gcs",
     srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
     args = [

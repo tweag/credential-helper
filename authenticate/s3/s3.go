@@ -2,15 +2,19 @@ package authenticate
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	signerv4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/tweag/credential-helper/api"
 )
 
@@ -18,6 +22,47 @@ const (
 	expiresIn   = 15 * time.Minute
 	emptySHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 )
+
+type R2 struct{}
+
+func (R2) Resolver(ctx context.Context) (api.Resolver, error) {
+	accessKeyID, ok := os.LookupEnv("R2_ACCESS_KEY_ID")
+	if !ok {
+		return nil, errors.New("R2_ACCESS_KEY_ID not set")
+	}
+	// try to use secret access key directly
+	secretAccessKey, ok := os.LookupEnv("R2_SECRET_ACCESS_KEY")
+	if !ok {
+		// try to use cloudflare token
+		cloudflareToken, ok := os.LookupEnv("CLOUDFLARE_API_TOKEN")
+		if !ok {
+			return nil, errors.New("need R2_SECRET_ACCESS_KEY or R2_SECRET_ACCESS_KEY environment variables to access R2")
+		}
+		// cloudflare token can be hashed to obtain the secret access key for the S3 API
+		hasher := sha256.New()
+		hasher.Write([]byte(cloudflareToken))
+		secretAccessKey = hex.EncodeToString(hasher.Sum(nil))
+	}
+
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, "")),
+		config.WithRegion("auto"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &S3Resolver{
+		signer: signerv4.NewSigner(),
+		config: cfg,
+	}, nil
+}
+
+// CacheKey returns the cache key for the given request.
+// For R2, every object has a unique signature, so the URI is a good cache key.
+func (r *R2) CacheKey(req api.GetCredentialsRequest) string {
+	return req.URI
+}
 
 type S3 struct{}
 
@@ -61,6 +106,11 @@ func (s *S3Resolver) Get(ctx context.Context, req api.GetCredentialsRequest) (ap
 		return api.GetCredentialsResponse{}, errors.New("unable to determine region from host")
 	}
 
+	s3provider := providerFromHost(parsedURL.Host)
+	if s3provider == ProviderUnknown {
+		return api.GetCredentialsResponse{}, errors.New("unsupported S3 backend")
+	}
+
 	httpReq := http.Request{
 		Method: http.MethodGet,
 		URL:    parsedURL,
@@ -89,6 +139,12 @@ func (s *S3Resolver) Get(ctx context.Context, req api.GetCredentialsRequest) (ap
 }
 
 func regionFromHost(host string) string {
+	// cloudfare r2
+	if strings.HasSuffix(host, ".r2.cloudflarestorage.com") {
+		return "auto"
+	}
+
+	// AWS S3
 	if host == "s3.amazonaws.com" {
 		return "us-east-1"
 	}
@@ -121,4 +177,24 @@ func regionFromHost(host string) string {
 	}
 
 	return ""
+}
+
+type S3Provider int
+
+const (
+	ProviderUnknown S3Provider = iota
+	ProviderAWS
+	ProviderCloudflareR2
+)
+
+func providerFromHost(host string) S3Provider {
+	if strings.HasSuffix(host, ".r2.cloudflarestorage.com") {
+		return ProviderCloudflareR2
+	}
+
+	if strings.HasSuffix(host, ".amazonaws.com") {
+		return ProviderAWS
+	}
+
+	return ProviderUnknown
 }
