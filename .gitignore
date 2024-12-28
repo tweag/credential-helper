@@ -3,3 +3,4 @@ agent.sock
 bazel-*
 MODULE.bazel.lock
 .vscode
+.env

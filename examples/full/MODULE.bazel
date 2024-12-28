@@ -27,6 +27,12 @@ http_file(
 )
 
 http_file(
+    name = "hello_world_r2",
+    integrity = "sha256-30vzSs1zKPpvC2kT3MVrRQtoiKVicYyL+XDpuWhRFPU=",
+    urls = ["https://47ffb5f0a156e14a0985028c836501e2.r2.cloudflarestorage.com/r2-private-example/hello_world"],
+)
+
+http_file(
     name = "hello_world_gcs",
     integrity = "sha256-/Llq5Bi4Y+uTiDqUzDn4FUXP35fiDSku0b2PeKFTztw=",
     urls = ["https://storage.googleapis.com/rules_gcs/hello_world"],

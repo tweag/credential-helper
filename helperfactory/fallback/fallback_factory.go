@@ -28,6 +28,8 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		fallthrough
 	case strings.EqualFold(u.Host, "raw.githubusercontent.com"):
 		return &authenticateGitHub.GitHub{}, nil
+	case strings.HasSuffix(strings.ToLower(u.Host), ".r2.cloudflarestorage.com"):
+		return &authenticateS3.R2{}, nil
 	default:
 		logging.Basicf("no matching credential helper found for %s - returning empty response\n", rawURL)
 		return authenticateNull.Null{}, nil
