@@ -113,7 +113,6 @@ The following options exist:
 - `$CREDENTIAL_HELPER_PRUNE_INTERVAL`:
   Duration between cache prunes in [Go duration format][go_duration]. Defaults to 1m. A negative value disables cache pruning.
 
-
 ## Troubleshooting
 
 1. Stop the agent (if it is running in the background)
@@ -133,6 +132,34 @@ The following options exist:
     ```
     echo '{"uri": "https://example.com/foo"}' | CREDENTIAL_HELPER_LOGGING=debug tools/credential-helper get
     ```
+
+## Security Considerations  
+
+In most circumstances, a credential helper improves security by decoupling resource configuration from the credentials required to access them. This reduces the need for hardcoded credentials stored in source code, minimizing potential security vulnerabilities.  
+
+### Credential Handling  
+
+The credential helper spawns two processes:  
+
+1. **A short-lived client process** that communicates with the caller via standard input and output.  
+2. **An agent process** that caches credentials and implements a JSON-RPC protocol via Unix domain sockets.  
+
+Credentials are cached only in memory (never written to disk). The client process exists only for the duration of a single request (e.g., obtaining credentials for a specific URI). Meanwhile, the agent process runs in the background and idles for up to three hours before automatically shutting down.  
+
+The agent evicts expired credentials from the cache once per minute but does not guarantee the secure scrubbing of memory. As a result, while expired credentials are no longer accessible through the agent socket, they may still reside in physical memory for some time before being reclaimed by garbage collection or the operating system.  
+
+### Attack Surface  
+
+Both processes run with the same privileges as the user who starts Bazel (or similar tools). Any credentials derived by the helper are also accessible to that user through environment variables, configuration files, the system keyring, or similar sources.  
+
+Any information retrievable by the user running the helper process does not constitute a disclosure of sensitive information. Instead, this section focuses on the attack surface exposed to other users on the same system.  
+
+#### JSON-RPC via Unix Domain Socket  
+
+The caching agent implements a simple RPC protocol that is accessible via a socket.  
+The socket’s access permissions are configured to restrict connections only to the user running the agent. This is enforced by setting a `umask` on the agent process before creating the socket.  
+
+The agent does not implement additional countermeasures. Consequently, access to the socket provides full read and write permissions for cached credentials.
 
 [spec]: https://github.com/EngFlow/credential-helper-spec
 [releases]: https://github.com/tweag/credential-helper/releases
