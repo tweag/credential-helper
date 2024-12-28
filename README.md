@@ -44,9 +44,9 @@ sequenceDiagram
 
 The following providers are supported as of today:
 
-- AWS S3
-- Google Cloud Storage
-- GitHub
+- [AWS S3](/docs/providers/s3.md)
+- [Google Cloud Storage (GCS)](/docs/providers/gcs.md)
+- [GitHub](/docs/providers/github.md)
 
 ## Installation and usage
 
@@ -85,6 +85,8 @@ Simply remove a line if you do not want the credential helper to be used for tha
 You can also configure the helper to be used for every domain (`--credential_helper=%workspace%/tools/credential-helper`).
 
 Now is a good time to install the credential helper. Simply run `bazel run @tweag-credential-helper//installer` to add the binary to your system. This step needs to be performed once per user.
+
+Follow the [provider-specific documentation](/docs/providers/) to ensure you can authenticate to the service.
 
 ## Configuration
 
