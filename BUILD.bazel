@@ -19,6 +19,7 @@ filegroup(
     name = "all_files",
     srcs = [
         "BUILD.bazel",
+        "LICENSE",
         "MODULE.bazel",
         "WORKSPACE",
         "go.mod",
