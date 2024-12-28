@@ -45,6 +45,7 @@ sequenceDiagram
 The following providers are supported as of today:
 
 - [AWS S3](/docs/providers/s3.md)
+- [Cloudflare R2](/docs/providers/r2.md)
 - [Google Cloud Storage (GCS)](/docs/providers/gcs.md)
 - [GitHub](/docs/providers/github.md)
 
@@ -79,6 +80,8 @@ common --credential_helper=storage.googleapis.com=%workspace%/tools/credential-h
 # S3
 common --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper
 common --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper
+# Cloudflare R2
+common --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper
 ```
 
 Simply remove a line if you do not want the credential helper to be used for that service.
