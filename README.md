@@ -88,6 +88,7 @@ Simply remove a line if you do not want the credential helper to be used for tha
 You can also configure the helper to be used for every domain (`--credential_helper=%workspace%/tools/credential-helper`).
 
 Now is a good time to install the credential helper. Simply run `bazel run @tweag-credential-helper//installer` to add the binary to your system. This step needs to be performed once per user.
+Alternatively, you can [write custom plugins that are part of your own Bazel workspace and build your own helper][plugins].
 
 Follow the [provider-specific documentation](/docs/providers/) to ensure you can authenticate to the service.
 
@@ -164,3 +165,4 @@ The agent does not implement additional countermeasures. Consequently, access to
 [spec]: https://github.com/EngFlow/credential-helper-spec
 [releases]: https://github.com/tweag/credential-helper/releases
 [go_duration]: https://pkg.go.dev/time#ParseDuration
+[plugins]: /docs/plugins.md
