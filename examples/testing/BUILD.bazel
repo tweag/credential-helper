@@ -1,4 +1,17 @@
-exports_files(["check_file_hash.sh"])
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "testing_lib",
+    srcs = ["check_file_hash.go"],
+    importpath = "github.com/tweag/credential-helper/examples/testing",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "testing",
+    embed = [":testing_lib"],
+    visibility = ["//visibility:public"],
+)
 
 filegroup(
     name = "all_files",

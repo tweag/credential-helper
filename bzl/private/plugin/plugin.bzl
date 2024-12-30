@@ -101,6 +101,15 @@ def _installer_impl(ctx):
     os = target_platform_info.os
     cpu = target_platform_info.cpu
 
+    destination = ctx.attr._default_install_destination_windows[BuildSettingInfo].value \
+        if os == "windows" \
+        else ctx.attr._default_install_destination_unix[BuildSettingInfo].value
+    target_specific_destination = ctx.attr.destination_windows \
+        if os == "windows" \
+        else ctx.attr.destination_unix
+    if len(target_specific_destination) > 0:
+        destination = target_specific_destination
+
     helper = None
     # fall back to use helper from source (if available and allowed)
     if allow_from_source and ctx.executable.credential_helper != None:
@@ -118,7 +127,7 @@ def _installer_impl(ctx):
         fail("No matching helper binary available in installer(name = \"%s\")" % ctx.attr.name)
 
     installer = ctx.actions.declare_file(
-        ctx.attr.name + ".link",
+        ctx.attr.name + ".exe",
     )
     ctx.actions.symlink(
         output = installer,
@@ -132,6 +141,8 @@ def _installer_impl(ctx):
             ctx.attr.credential_helper[DefaultInfo].default_runfiles,
         ])
     env = {"CREDENTIAL_HELPER_INSTALLER_RUN": "1"}
+    if len(destination) > 0:
+        env["CREDENTIAL_HELPER_INSTALLER_DESTINATION"] = destination
     env.update(ctx.attr.env)
 
     return [
@@ -156,6 +167,18 @@ installer = rule(
             mandatory = False,
             providers = [PrebuiltHelperInfo],
         ),
+        "destination_unix": attr.string(
+            doc = """Install destination used on Unix. Can use prefixes like %workspace% to use workspace-relative destinations. 
+            If unset, destination is set to @tweag-credential-helper//bzl/config:default_install_destination_unix.
+            If both are unset, destination is set to well-known helper workdir that is targeted by shell wrapper.""",
+            mandatory = False,
+        ),
+        "destination_windows": attr.string(
+            doc = """Install destination used on Windows. Can use prefixes like %workspace% to use workspace-relative destinations.
+            If unset, destination is set to @tweag-credential-helper//bzl/config:default_install_destination_windows,
+            which defaults to a path inside of the Bazel workspace (shell wrapper doesn't work on Windows).""",
+            mandatory = False,
+        ),
         "env": attr.string_dict(
             doc = """Environment variables to set for the test execution.""",
         ),
@@ -164,6 +187,14 @@ installer = rule(
         ),
         "_helper_build_mode": attr.label(
             default = Label("//bzl/config:helper_build_mode"),
+            providers = [BuildSettingInfo],
+        ),
+        "_default_install_destination_unix": attr.label(
+            default = Label("//bzl/config:default_install_destination_unix"),
+            providers = [BuildSettingInfo],
+        ),
+         "_default_install_destination_windows": attr.label(
+            default = Label("//bzl/config:default_install_destination_windows"),
             providers = [BuildSettingInfo],
         ),
         "_os_cpu": attr.label(

@@ -45,29 +45,33 @@ prebuilt_collection_hub_repo = repository_rule(
 )
 
 def _prebuilt_credential_helper_repo_impl(rctx):
+    extension = "exe" if rctx.attr.os == "windows" else ""
+    dot = "." if len(extension) > 0 else ""
     urls = [template.format(
         version = rctx.attr.version,
         os = rctx.attr.os,
         cpu = rctx.attr.cpu,
+        dot = dot,
+        extension = extension,
     ) for template in rctx.attr.url_templates]
     rctx.download(
         urls,
-        output = "helper",
+        output = "credential-helper.exe",
         executable = True,
         integrity = rctx.attr.integrity
     )
     rctx.file(
         "BUILD.bazel",
-        content = """exports_files(["helper"])""",
+        content = """exports_files(["credential-helper.exe"])""",
     )
 
 _prebuilt_attrs = {
     "version": attr.string(mandatory = True),
     "integrity": attr.string(mandatory = True),
-    "os": attr.string(values = ["darwin", "linux"]),
+    "os": attr.string(values = ["darwin", "linux", "windows"]),
     "cpu": attr.string(values = ["386", "amd64", "arm64"]),
     "url_templates": attr.string_list(
-        default = ["https://github.com/tweag/credential-helper/releases/download/{version}/helper_{os}_{cpu}"],
+        default = ["https://github.com/tweag/credential-helper/releases/download/{version}/credential_helper_{os}_{cpu}{dot}{extension}"],
     ),
 }
 
@@ -135,7 +139,7 @@ def _prebuilt_credential_helpers(ctx):
     for (collection_name, collection) in collections.items():
         helpers = {}
         for ((os, arch), helper_repo_name) in collection["helpers"].items():
-            helpers["%s_%s" % (os, arch) ] = "@%s//:helper" % helper_repo_name
+            helpers["%s_%s" % (os, arch) ] = "@%s//:credential-helper.exe" % helper_repo_name
         prebuilt_collection_hub_repo(
             name = collection_name,
             helpers = helpers,

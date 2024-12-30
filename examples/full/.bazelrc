@@ -1,7 +1,25 @@
-common --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
-common --credential_helper=github.com=%workspace%/tools/credential-helper
-common --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper
-common --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper
-common --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper
-common --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper
 common --test_output=errors
+common --enable_runfiles
+
+# allow the use of different credential helpers on Unix and Windows
+common --enable_platform_specific_config
+common:macos --config=unix
+common:linux --config=unix
+common:freebsd --config=unix
+common:openbsd --config=unix
+
+# credential helpers for Unix
+common:unix --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=github.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper
+
+# credential helpers for Windows
+common:windows --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=github.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper.exe

@@ -38,8 +38,7 @@ _goarch_list = [
 _os_to_arches = {
    GOOS_LINUX: [GOARCH_386, GOARCH_AMD64, GOARCH_ARM64],
    GOOS_DARWIN: [GOARCH_AMD64, GOARCH_ARM64],
-   # TODO: fix Windows build
-   GOOS_WINDOWS: [],
+   GOOS_WINDOWS: [GOARCH_AMD64, GOARCH_ARM64],
 }
 
 def _generate_platforms():
@@ -133,7 +132,11 @@ def _release_files(ctx):
         src = ctx.split_attr.executable[platform]
         executable = src[DefaultInfo].files_to_run.executable
         basename = ctx.attr.basename if len(ctx.attr.basename) > 0 else executable.basename
-        dest_src_map["bin/%s_%s" % (basename, platform)] = executable
+        # ensure we copy the extension from the executable (for Windows)
+        dot_extension = ""
+        if len(executable.extension) > 0 and not basename.endswith("." + executable.extension):
+            dot_extension = "." + executable.extension
+        dest_src_map["bin/%s_%s%s" % (basename, platform, dot_extension)] = executable
         output_group_info["%s_files" % platform] = depset([executable])
         lockfile_args.add("--helper", "%s=%s" % (platform, executable.path))
     lockfile = ctx.actions.declare_file("%s_lockfile.json" % ctx.attr.name)
@@ -177,7 +180,7 @@ release_files = rule(
     },
 )
 
-def _source_bundle(ctx):
+def _source_bundle_impl(ctx):
     attributes = {}
     dest_src_map = {}
     for file in ctx.files.srcs:
@@ -194,7 +197,7 @@ def _source_bundle(ctx):
     ]
 
 source_bundle = rule(
-    implementation = _source_bundle,
+    implementation = _source_bundle_impl,
     attrs = {
         "srcs": attr.label_list(allow_files = True),
         "overrides": attr.label_list(providers = [OverrideSourceFilesInfo]),

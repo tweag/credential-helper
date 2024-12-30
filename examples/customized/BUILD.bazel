@@ -1,4 +1,5 @@
 load("@gazelle//:def.bzl", "gazelle")
+load("@tweag-credential-helper//examples/testing:defs.bzl", "check_file_hash_test")
 load("@tweag-credential-helper//bzl:defs.bzl", "credential_helper", "installer")
 
 gazelle(name = "gazelle")
@@ -24,9 +25,8 @@ installer(
     credential_helper = ":custom_credential_helper",
 )
 
-sh_test(
+check_file_hash_test(
     name = "check_httpbin_basic_auth",
-    srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
     args = [
         "$(location @httpbin_basic_auth//file)",
         "862df46c49d3993226614a265acc0460169eb9d16951d581e9f139153ad95138",

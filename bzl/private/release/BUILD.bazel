@@ -20,7 +20,7 @@ release_platform_flag(
 
 release_files(
     name = "release",
-    basename = "helper",
+    basename = "credential_helper",
     executable = "//:tweag-credential-helper",
     shell_stub = "//:tools/credential-helper",
     tags = ["manual"],

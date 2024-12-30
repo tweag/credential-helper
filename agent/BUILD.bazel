@@ -3,13 +3,17 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "agent",
     srcs = [
+        "agent_unix.go",
+        "agent_windows.go",
         "client.go",
-        "harden_agent_process.go",
+        "client_unix.go",
+        "client_windows.go",
         "service.go",
     ],
     importpath = "github.com/tweag/credential-helper/agent",
     visibility = ["//visibility:public"],
     deps = [
+        "//agent/internal/lockfile",
         "//api",
         "//logging",
     ],

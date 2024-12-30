@@ -1,6 +1,7 @@
-sh_test(
+load("@tweag-credential-helper//examples/testing:defs.bzl", "check_file_hash_test")
+
+check_file_hash_test(
     name = "check_github_repo",
-    srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
     args = [
         "$(location @private_github_repo_file//file)",
         "81e455883ec5c65337edd7bd1045b4fea50fef093b40636d96aa8001ebd54910",
@@ -8,9 +9,8 @@ sh_test(
     data = ["@private_github_repo_file//file"],
 )
 
-sh_test(
+check_file_hash_test(
     name = "check_s3",
-    srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
     args = [
         "$(location @hello_world_s3//file)",
         "3cf3250d34148d3fe03c4a8eb1a38695b969ff96ec6bfce5f9f544279fb2a5df",
@@ -18,9 +18,8 @@ sh_test(
     data = ["@hello_world_s3//file"],
 )
 
-sh_test(
+check_file_hash_test(
     name = "check_r2",
-    srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
     args = [
         "$(location @hello_world_r2//file)",
         "df4bf34acd7328fa6f0b6913dcc56b450b6888a562718c8bf970e9b9685114f5",
@@ -28,9 +27,8 @@ sh_test(
     data = ["@hello_world_r2//file"],
 )
 
-sh_test(
+check_file_hash_test(
     name = "check_gcs",
-    srcs = ["@tweag-credential-helper//examples/testing:check_file_hash.sh"],
     args = [
         "$(location @hello_world_gcs//file)",
         "fcb96ae418b863eb93883a94cc39f81545cfdf97e20d292ed1bd8f78a153cedc",
