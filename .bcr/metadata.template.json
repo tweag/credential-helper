@@ -1,0 +1,15 @@
+{
+    "homepage": "https://github.com/tweag/credential-helper",
+    "maintainers": [
+        {
+            "name": "Malte Poll",
+            "email": "malte.poll@moduscreate.com",
+            "github": "malt3"
+        }
+    ],
+    "repository": [
+        "github:tweag/credential-helper"
+    ],
+    "versions": [],
+    "yanked_versions": {}
+}
