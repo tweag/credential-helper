@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -67,7 +67,7 @@ func setupWorkdir(workspacePath string) (string, error) {
 	// assume that helper workdir
 	// is ${cache_dir}/tweag-credential-helper/${workdir_hash}
 	cacheDir := cacheDir()
-	workdirPath = path.Join(cacheDir, "tweag-credential-helper", workdirHash(workspacePath))
+	workdirPath = filepath.Join(cacheDir, "tweag-credential-helper", workdirHash(workspacePath))
 	return workdirPath, os.Setenv(api.WorkdirEnv, workdirPath)
 
 }
@@ -85,11 +85,11 @@ func Workdir() string {
 }
 
 func Bin() string {
-	return path.Join(Workdir(), "bin")
+	return filepath.Join(Workdir(), "bin")
 }
 
 func Run() string {
-	return path.Join(Workdir(), "run")
+	return filepath.Join(Workdir(), "run")
 }
 
 func CredentialHelper() string {
@@ -98,12 +98,12 @@ func CredentialHelper() string {
 		filename += ".exe"
 	}
 
-	return LookupPathEnv(api.CredentialHelperBin, path.Join("%workdir%", "bin", filename), false)
+	return LookupPathEnv(api.CredentialHelperBin, filepath.Join("%workdir%", "bin", filename), false)
 }
 
 func AgentPaths() (string, string) {
-	socketPath := LookupPathEnv(api.AgentSocketPath, path.Join("%workdir%", "run", "agent.sock"), true)
-	pidPath := LookupPathEnv(api.AgentPidPath, path.Join("%workdir%", "run", "agent.pid"), false)
+	socketPath := LookupPathEnv(api.AgentSocketPath, filepath.Join("%workdir%", "run", "agent.sock"), true)
+	pidPath := LookupPathEnv(api.AgentPidPath, filepath.Join("%workdir%", "run", "agent.pid"), false)
 
 	return socketPath, pidPath
 }
@@ -174,7 +174,7 @@ func expandPath(input string, shortPath bool) string {
 		return input
 	}
 	if shortPath && canShortPath {
-		return path.Join(".", suffix)
+		return filepath.Join(".", suffix)
 	}
-	return path.Join(prefix, suffix)
+	return filepath.Join(prefix, suffix)
 }

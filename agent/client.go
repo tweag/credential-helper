@@ -2,9 +2,9 @@ package agent
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"os"
-	"syscall"
 
 	"github.com/tweag/credential-helper/api"
 )
@@ -12,17 +12,11 @@ import (
 func LaunchAgentProcess() error {
 	self, err := os.Executable()
 	if err != nil {
-		return err
+		return fmt.Errorf("finding path to own executable: %w", err)
 	}
-	sys := syscall.SysProcAttr{
-		Setpgid: true,
-	}
-	procAttr := &os.ProcAttr{
-		Sys: &sys,
-	}
-	proc, err := os.StartProcess(self, []string{self, "agent-launch"}, procAttr)
+	proc, err := os.StartProcess(self, []string{self, "agent-launch"}, procAttrForAgentProcess())
 	if err != nil {
-		return err
+		return fmt.Errorf("starting agent process: %w", err)
 	}
 	return proc.Release()
 }

@@ -1,2 +1,15 @@
-common --credential_helper=httpbin.org=%workspace%/tools/credential-helper
 common --test_output=errors
+common --enable_runfiles
+
+# allow the use of different credential helpers on Unix and Windows
+common --enable_platform_specific_config
+common:macos --config=unix
+common:linux --config=unix
+common:freebsd --config=unix
+common:openbsd --config=unix
+
+# credential helpers for Unix
+common:unix --credential_helper=httpbin.org=%workspace%/tools/credential-helper
+
+# credential helpers for Windows
+common:windows --credential_helper=httpbin.org=%workspace%/tools/credential-helper.exe

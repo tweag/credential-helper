@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -24,7 +24,7 @@ type SqliteCache struct {
 func NewSqliteCache() api.Cache {
 	dbFilePath := dbPath()
 	if dbFilePath != ":memory:" {
-		os.MkdirAll(path.Dir(dbFilePath), os.ModePerm)
+		os.MkdirAll(filepath.Dir(dbFilePath), os.ModePerm)
 	}
 	// TODO: provide a way to close the DB
 	db, err := sql.Open("sqlite", dbFilePath)
@@ -117,5 +117,5 @@ func (c *SqliteCache) Prune(_ context.Context) error {
 }
 
 func dbPath() string {
-	return locate.LookupPathEnv("CREDENTIAL_HELPER_DB_PATH", path.Join("%workdir%", "var", "database.sqlite"), false)
+	return locate.LookupPathEnv("CREDENTIAL_HELPER_DB_PATH", filepath.Join("%workdir%", "var", "database.sqlite"), false)
 }

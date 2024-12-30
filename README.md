@@ -8,6 +8,7 @@ A credential-helper framework and agent for [Bazel](https://bazel.build/) and si
 - Smart caching: Reuses cached credentials where possible instead of generating fresh credentials for each URI.
 - Batteries Included: Support for popular services out of the box while being easily extensible.
 - Framework for Credential Helpers: A Go-based framework to create and manage credential helpers for commonly used cloud services and APIs.
+- Cross Platform: Works out of the box on Linux, macOS and Windows (other platforms are untested).
 
 ## Architecture
 
@@ -51,9 +52,9 @@ The following providers are supported as of today:
 
 ## Installation and usage
 
-You can either install a prebuilt binary of the credential helper on your system or use a Bazel module.
+You can either manually install a binary of the credential helper on your system (into `$PATH` or to a well-known absolute path) or use the Bazel module.
 Prebuilt artifacts can be found in the [GitHub releases][releases].
-If you want to use prebuilt artifacts, skip ahead to the [configuration](#configuration) after installing the binary yourself.
+If you want to manually install the helper, skip ahead to the [configuration](#configuration) after installing the binary yourself.
 
 Add the following to your `MODULE.bazel` if you want to perform the recommended installation:
 
@@ -71,6 +72,9 @@ chmod +x tools/credential-helper
 
 Next configure Bazel to use the credential helper by adding the following to your `.bazelrc`:
 
+<details>
+<summary>Configuration for Unix only (Linux, macOS)</summary>
+
 ```
 # GitHub
 common --credential_helper=github.com=%workspace%/tools/credential-helper
@@ -84,6 +88,46 @@ common --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helpe
 common --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper
 ```
 
+</details>
+
+<details>
+<summary>Configuration for Linux, macOS, and Windows</summary>
+
+```
+# allow the use of different credential helpers on Unix and Windows
+common --enable_platform_specific_config
+common:macos --config=unix
+common:linux --config=unix
+common:freebsd --config=unix
+common:openbsd --config=unix
+
+# GitHub (Unix)
+common:unix --credential_helper=github.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper
+# GitHub (Windows)
+common:windows --credential_helper=github.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper.exe
+
+# Google Cloud Storage / GCS (Unix) 
+common:unix --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
+# Google Cloud Storage / GCS (Windows)
+common:windows --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper.exe
+
+# S3 (Unix)
+common:unix --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper
+# S3 (Windows)
+common:windows --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper.exe
+
+# Cloudflare R2 (Unix)
+common:unix --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper
+# Cloudflare R2 (Windows)
+common:windows --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper.exe
+```
+
+</details>
+
 Simply remove a line if you do not want the credential helper to be used for that service.
 You can also configure the helper to be used for every domain (`--credential_helper=%workspace%/tools/credential-helper`).
 
@@ -94,24 +138,46 @@ Follow the [provider-specific documentation](/docs/providers/) to ensure you can
 ## Configuration
 
 You can use environment variables to configure the helper.
-This works by either changing the environment Bazel is started with or by adding the values to the shell stub.
+This works by either changing the environment Bazel is started with or by adding the values to the shell stub (that is only available on Linux and macOS).
 
 The following options exist:
 
 - `$CREDENTIAL_HELPER_STANDALONE`:
   If set to 1, the credential helper will run in standalone mode, which means it will not start or connect to the agent process.
 - `$CREDENTIAL_HELPER_BIN`:
-  Path of the credential helper binary. If not set, the helper will be searched in `${HOME}/.cache/tweag-credential-helper/bin/credential-helper`
+  Path of the credential helper binary. If not set, the helper will be searched in `${HOME}/.cache/tweag-credential-helper/<HASH>/bin/credential-helper`
 - `$CREDENTIAL_HELPER_AGENT_SOCKET`
-  Path of the agent socket. If not set, the helper will use the default path `${HOME}/.cache/tweag-credential-helper/run/agent.sock`.
+  Path of the agent socket. Subject to [prefix expansion](#prefix-expansion). If not set, the helper will use the default path `${HOME}/.cache/tweag-credential-helper/<HASH>/run/agent.sock`.
 - `$CREDENTIAL_HELPER_AGENT_PID`:
-  Path of the agent pid file. If not set, the helper will use the default path `${HOME}/.cache/tweag-credential-helper/run/agent.pid`
+  Path of the agent pid file. Subject to [prefix expansion](#prefix-expansion). If not set, the helper will use the default path `${HOME}/.cache/tweag-credential-helper/<HASH>/run/agent.pid`
 - `$CREDENTIAL_HELPER_LOGGING=off|basic|debug`
   Log level of the credential helper. Debug may expose sensitive information. Default is off.
 - `$CREDENTIAL_HELPER_IDLE_TIMEOUT`:
   Idle timeout of the agent in [Go duration format][go_duration]. The agent will run in the background and wait for connections until the idle timeout is reached. Defaults to 3h. A negative value disables idle shutdowns.
 - `$CREDENTIAL_HELPER_PRUNE_INTERVAL`:
   Duration between cache prunes in [Go duration format][go_duration]. Defaults to 1m. A negative value disables cache pruning.
+
+Additionally, you can configure how the installer behaves by adding any of the following settings to your `.bazelrc`:
+
+- `--@tweag-credential-helper//bzl/config:helper_build_mode={auto,from_source,prebuilt}`:
+  Configures how the credential helper is built and wether or not a Go toolchain is required. The `prebuilt` setting only allows downloading a preregistered and prebuilt helper binary. This is fast and doesn't require a Go toolchain, but may fail if no prebuilt binary for your host platform is available. `from_source` forces building the `go_binary` from source and requires registering a Go toolchain. `auto` (the default) prefers the use of a prebuilt, but allows falling back to building from source.
+- `--@tweag-credential-helper//bzl/config:default_install_destination_unix=<path>`:
+  Configures the install destination of the credential helper on Unix (Linux, macOS). Subject to [prefix expansion](#prefix-expansion). Defaults to `%workdir%/bin/credential-helper`, which is the path used by the shell wrapper. If you set this to a workspace relative path like `%workspace%/tools/my-helper-binary`, (add that path to `.gitignore`) and point `--credential_helper` to the same path, you can avoid using the shell wrapper but modify the source tree instead.
+- `--@tweag-credential-helper//bzl/config:default_install_destination_windows=<path>`:
+  Configures the install destination of the credential helper on Windows. Subject to [prefix expansion](#prefix-expansion). Defaults to `%workspace%\tools\credential-helper.exe`, which is the path used in `.bazelrc` by default.
+  Windows cannot make use of the shell wrapper, so this binary is copied to the source tree instead of a path relative to the workdir.
+
+
+### <a name="prefix-expansion"></a> Prefix Expansion
+
+Configuration options (including envionment variables and Bazel flags) that refer to paths are subject to prefix expansion. Special prefixes listed below will be replaced by concrete paths at runtime.
+
+- `%workdir%`: the working directory of the agent process:
+  `${XDG_CACHE_HOME}/tweag-credential-helper/<HASH>` (where `$XDG_CACHE_HOME` defaults to `${HOME}/.cache` on Linux and `<HASH>` is the md5 sum of the absolte dirname of the directory containing `MODULE.bazel`).
+- `%workspace%`: the root of the Bazel workspace (absolute dirname of the directory containing `MODULE.bazel`).
+- `%tmp%`: either `$TEST_TMPDIR`, `$TMPDIR`, or `/tmp` in that order of preference.
+- `%cache%`: `$XDG_CACHE_HOME` (which defaults to `${HOME}/.cache` on Linux).
+- `~`: `$HOME` (the home directory of the current user).
 
 ## Troubleshooting
 

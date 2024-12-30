@@ -11,6 +11,27 @@ string_flag(
     visibility = ["//visibility:public"],
 )
 
+string_flag(
+    name = "default_install_destination_unix",
+    # This default destinatiion is where the shell wrapper searches for the credential helper binary.
+    # If you change this, use a workspace-relative path like
+    # "%workspace%/tools/my-helper-binary"
+    # add it to .gitignore and point --credential_helper in .bazelrc to the same path.
+    # This avoid the need for a shell wrapper but modifies the source tree.
+    build_setting_default = "%workdir%/bin/credential-helper",
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "default_install_destination_windows",
+    # This default destination is relative to your MODULE.bazel file.
+    # On Windows, it is impossible to use a shell wrapper, so the installer
+    # copies the exe into the source tree.
+    # The path chosen here should also be used by --credential_helper in .bazelrc
+    build_setting_default = "%workspace%\\tools\\credential-helper.exe",
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "all_files",
     srcs = glob(["*"]),

@@ -2,9 +2,9 @@ package installer
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -45,9 +45,10 @@ func InstallerProcess() {
 
 func install(credentialHelperBin string) (string, error) {
 	destination := locate.CredentialHelper()
-	if err := os.MkdirAll(path.Dir(destination), 0o755); err != nil {
-		return "", err
+	if err := os.MkdirAll(filepath.Dir(destination), 0o755); err != nil {
+		return "", fmt.Errorf("making install destination directory: %w", err)
 	}
+	destination = locate.LookupPathEnv("CREDENTIAL_HELPER_INSTALLER_DESTINATION", destination, false)
 	// NOTE: this stop-cleanup-install procedure is merely best effort.
 	// It is clearly prone to race conditions
 	// As an improvement,
@@ -60,7 +61,26 @@ func install(credentialHelperBin string) (string, error) {
 	if err := os.Remove(destination); err != nil && !os.IsNotExist(err) {
 		fmt.Fprintf(os.Stderr, "Removing old agent: %v", err)
 	}
-	return destination, os.Link(credentialHelperBin, destination)
+	return destination, hardlinkOrCopy(credentialHelperBin, destination)
+}
+
+func hardlinkOrCopy(src, dst string) error {
+	if err := os.Link(src, dst); err == nil {
+		return nil
+	}
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("opening source file for copying: %w", err)
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("opening destination file for copying: %w", err)
+	}
+	defer dstFile.Close()
+	_, err = io.Copy(dstFile, srcFile)
+	return err
 }
 
 func attemptAgentShutdown(agentPath string) string {

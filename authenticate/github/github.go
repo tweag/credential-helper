@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -29,7 +28,7 @@ func (g *GitHub) Resolver(ctx context.Context) (api.Resolver, error) {
 	}
 	tokenSource, err := NewGitHubTokenSourceFromFile()
 	if err == nil {
-		logging.Debugf("loaded GitHub hosts file from %s", path.Join(configDir(), "hosts.yml"))
+		logging.Debugf("loaded GitHub hosts file from %s", filepath.Join(configDir(), "hosts.yml"))
 		return &GitHubResolver{tokenSource: tokenSource}, nil
 	}
 	token, err := keyring.Get("gh:github.com", "")
@@ -142,7 +141,7 @@ func NewGitHubTokenSourceFromEnv() (*GitHubTokenSource, error) {
 
 func NewGitHubTokenSourceFromFile() (*GitHubTokenSource, error) {
 	const host = "github.com"
-	cfg, err := hostsFromFile(path.Join(configDir(), "hosts.yml"))
+	cfg, err := hostsFromFile(filepath.Join(configDir(), "hosts.yml"))
 	if err != nil {
 		return nil, err
 	}

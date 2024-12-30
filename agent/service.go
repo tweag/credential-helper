@@ -12,9 +12,9 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 
+	"github.com/tweag/credential-helper/agent/internal/lockfile"
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/logging"
 )
@@ -22,7 +22,7 @@ import (
 type CachingAgent struct {
 	cache           api.Cache
 	lis             net.Listener
-	lockFile        *os.File
+	lockFile        lockfile.Lockfile
 	shutdownChan    chan struct{}
 	shutdownStarted atomic.Bool
 	idleTimeout     time.Duration
@@ -37,21 +37,16 @@ func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache, i
 
 	_ = os.MkdirAll(filepath.Dir(agentLockPath), 0o755)
 	if !strings.HasPrefix(socketPath, "@") {
-		_ = os.MkdirAll(filepath.Dir(socketPath), 0o755)
+		socketDir := filepath.Dir(socketPath)
+		_ = os.MkdirAll(socketDir, 0o755)
+		if err := hardenSocketDir(socketDir); err != nil {
+			return nil, func() error { return nil }, err
+		}
 	}
 
-	agentLock, err := os.OpenFile(agentLockPath, os.O_RDWR|os.O_CREATE, 0o666)
+	agentLock, err := lockfile.New(agentLockPath)
 	if err != nil {
 		return nil, func() error { return nil }, err
-	}
-
-	if err := syscall.Flock(int(agentLock.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		agentLock.Close()
-		return nil, func() error { return nil }, fmt.Errorf("failed to lock agent lock file (agent already running?): %w", err)
-	}
-	if _, err := agentLock.WriteString(fmt.Sprintf("%d", os.Getpid())); err != nil {
-		agentLock.Close()
-		return nil, func() error { return nil }, fmt.Errorf("failed to write pid to agent lock file: %w", err)
 	}
 
 	// delete the socket file if it already exists from a previous, dead agent
@@ -269,7 +264,6 @@ func (a *CachingAgent) cleanup() error {
 	// to ensure that all resources are cleaned up.
 	a.wg.Wait()
 	logging.Debugf("cleaning up")
-	_ = syscall.Flock(int(a.lockFile.Fd()), syscall.LOCK_UN)
 	return a.lockFile.Close()
 }
 
