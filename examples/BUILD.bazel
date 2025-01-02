@@ -3,32 +3,11 @@ load(
     "@rules_bazel_integration_test//bazel_integration_test:defs.bzl",
     "bazel_integration_test",
     "bazel_integration_tests",
-    "default_test_runner",
     "integration_test_utils",
 )
 
 # gazelle:exclude customized
 # gazelle:exclude full
-
-default_test_runner(
-    name = "default_test_runner",
-    bazel_cmds = [
-        "info",
-        "run @tweag-credential-helper//installer",
-        "shutdown",
-        "test //...",
-    ],
-)
-
-default_test_runner(
-    name = "customized_installer_test_runner",
-    bazel_cmds = [
-        "info",
-        "run //:custom_installer",
-        "shutdown",
-        "test //...",
-    ],
-)
 
 bazel_integration_tests(
     name = "full_test",
@@ -46,7 +25,7 @@ bazel_integration_tests(
         "R2_SECRET_ACCESS_KEY",
     ],
     bazel_versions = bazel_binaries.versions.all,
-    test_runner = ":default_test_runner",
+    test_runner = "//bzl/private/integration_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("full") + [
         "//examples/testing:all_files",
         "//bzl/private/source_files:release_src_files",
@@ -59,8 +38,11 @@ bazel_integration_tests(
     bazel_versions = bazel_binaries.versions.all,
     # This integration test does not use real credentials.
     # It is safe to enable debug logging by default.
-    env = {"CREDENTIAL_HELPER_LOGGING": "debug"},
-    test_runner = ":customized_installer_test_runner",
+    env = {
+        "CREDENTIAL_HELPER_LOGGING": "debug",
+        "BAZEL_INTEGRATION_TEST_INSTALL_TARGET": "//:custom_installer",
+    },
+    test_runner = "//bzl/private/integration_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("customized") + [
         "//examples/testing:all_files",
         "//bzl/private/source_files:release_src_files",
