@@ -1,0 +1,12 @@
+diff -Naur a/bazel_integration_test/bzlmod/bazel_binaries.bzl b/bazel_integration_test/bzlmod/bazel_binaries.bzl
+--- a/bazel_integration_test/bzlmod/bazel_binaries.bzl	2025-01-01 17:44:15.751740500 -0800
++++ b/bazel_integration_test/bzlmod/bazel_binaries.bzl	2025-01-01 17:44:34.674656700 -0800
+@@ -142,7 +142,7 @@
+     return vi
+ 
+ # TODO(GH184): Make this configurable.
+-_BAZELISK_VERSION = "1.18.0"
++_BAZELISK_VERSION = "1.25.0"
+ 
+ def _bazel_binaries_impl(module_ctx):
+     dep_names = []

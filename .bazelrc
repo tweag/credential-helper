@@ -7,3 +7,4 @@ test --test_output=errors
 
 # to make Bazel integration tests work on Windows
 common --enable_runfiles
+startup --windows_enable_symlinks

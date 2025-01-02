@@ -1,5 +1,6 @@
 common --test_output=errors
 common --enable_runfiles
+startup --windows_enable_symlinks
 
 # allow the use of different credential helpers on Unix and Windows
 common --enable_platform_specific_config

@@ -31,8 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Bazel integration tests currently have issues on Windows
-        runner: [macos-13, macos-15, ubuntu-22.04]
+        runner: [macos-13, macos-15, ubuntu-22.04, windows-2025]
     runs-on: ${{ matrix.runner }}
     permissions:
       id-token: write
@@ -61,49 +60,6 @@ jobs:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
         R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
         R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-  # remove this job when Windows integration tests are fixed
-  windows_integration_test:
-    runs-on: windows-2025
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v3
-      with:
-        role-to-assume: arn:aws:iam::381492153904:role/git-s3-access
-        aws-region: us-east-1
-    - name: Authenticate with GCP
-      id: gauth
-      uses: google-github-actions/auth@v1
-      with:
-        workload_identity_provider: "projects/448697004169/locations/global/workloadIdentityPools/github-workload-pool/providers/github-provider"
-        service_account: "github-service-account@ospo-data-platform.iam.gserviceaccount.com"
-        export_environment_variables: true
-        create_credentials_file: true
-    - uses: cgrindel/gha_set_up_bazel@v1
-      with:
-        repo_name: credential-helper
-    - name: Execute full example tests
-      run: |
-        bazelisk run @tweag-credential-helper//installer
-        bazelisk test //...
-      working-directory: examples/full
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-        R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-    - name: Execute customized example tests
-      run: |
-        bazelisk run //:custom_installer
-        bazelisk test //...
-      working-directory: examples/customized
-      env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-        R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-
 
   all_ci_tests:
     runs-on: ubuntu-22.04
