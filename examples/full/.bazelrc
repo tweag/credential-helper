@@ -2,6 +2,9 @@ common --test_output=errors
 common --enable_runfiles
 startup --windows_enable_symlinks
 
+# rules_oci: disable builtin credential handling
+common --repo_env=OCI_DISABLE_GET_TOKEN=1
+
 # allow the use of different credential helpers on Unix and Windows
 common --enable_platform_specific_config
 common:macos --config=unix
@@ -13,14 +16,18 @@ common:openbsd --config=unix
 common:unix --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
 common:unix --credential_helper=github.com=%workspace%/tools/credential-helper
 common:unix --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=ghcr.io=%workspace%/tools/credential-helper
 common:unix --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper
 common:unix --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper
 common:unix --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=index.docker.io=%workspace%/tools/credential-helper
 
 # credential helpers for Windows
 common:windows --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper.exe
 common:windows --credential_helper=github.com=%workspace%/tools/credential-helper.exe
 common:windows --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=ghcr.io=%workspace%/tools/credential-helper.exe
 common:windows --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper.exe
 common:windows --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper.exe
 common:windows --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=index.docker.io=%workspace%/tools/credential-helper.exe

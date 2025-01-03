@@ -19,6 +19,7 @@ bazel_integration_tests(
         "AWS_SESSION_TOKEN",
         "CREDENTIAL_HELPER_LOGGING",
         "GH_TOKEN",
+        "GHCR_TOKEN",
         "GITHUB_TOKEN",
         "GOOGLE_APPLICATION_CREDENTIALS",
         "R2_ACCESS_KEY_ID",

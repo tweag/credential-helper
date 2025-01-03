@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/tweag/credential-helper/api"
+	"github.com/tweag/credential-helper/authenticate/oci"
 	"github.com/tweag/credential-helper/logging"
 	keyring "github.com/zalando/go-keyring"
 	"golang.org/x/oauth2"
@@ -22,21 +23,11 @@ import (
 type GitHub struct{}
 
 func (g *GitHub) Resolver(ctx context.Context) (api.Resolver, error) {
-	if tokenSource, err := NewGitHubTokenSourceFromEnv(); err == nil {
-		logging.Basicf("using GitHub token from environment")
-		return &GitHubResolver{tokenSource: tokenSource}, nil
+	source, err := selectTokenSource()
+	if err != nil {
+		return nil, err
 	}
-	tokenSource, err := NewGitHubTokenSourceFromFile()
-	if err == nil {
-		logging.Debugf("loaded GitHub hosts file from %s", filepath.Join(configDir(), "hosts.yml"))
-		return &GitHubResolver{tokenSource: tokenSource}, nil
-	}
-	token, err := keyring.Get("gh:github.com", "")
-	if err == nil {
-		logging.Basicf("using GitHub token from keyring")
-		return &GitHubResolver{tokenSource: &GitHubTokenSource{token: token}}, nil
-	}
-	return nil, errors.New("no GitHub token found")
+	return &GitHubResolver{tokenSource: source}, nil
 }
 
 // CacheKey returns a cache key for the given request.
@@ -47,6 +38,40 @@ func (g *GitHub) CacheKey(req api.GetCredentialsRequest) string {
 		return "" // disable caching
 	}
 	return parsedURL.Host
+}
+
+func GitHubContainerRegistry() *oci.OCI {
+	realmForService := map[string]oci.WWWAuthenticate{
+		"ghcr.io": {
+			Realm:   "https://ghcr.io/token",
+			Service: "ghcr.io",
+		},
+	}
+	resolver := func(ctx context.Context) (map[string]func(registry, service, realm string) (oci.AuthConfig, error), error) {
+		source, err := selectTokenSource()
+		if err != nil {
+			logging.Debugf("no token source found for ghcr.io - allowing fallback to docker config: %v", err)
+			return nil, nil
+		}
+		actor, ok := os.LookupEnv("GITHUB_ACTOR")
+		if !ok {
+			actor = "unset"
+		}
+		return map[string]func(registry, service, realm string) (oci.AuthConfig, error){
+			"ghcr.io": func(registry, service, realm string) (oci.AuthConfig, error) {
+				token, err := source.Token()
+				if err != nil {
+					return oci.AuthConfig{}, err
+				}
+				return oci.AuthConfig{
+					Username: actor,
+					Password: token.AccessToken,
+				}, nil
+			},
+		}, nil
+	}
+
+	return oci.NewCustomOCI(realmForService, nil, resolver)
 }
 
 type GitHubResolver struct {
@@ -92,8 +117,6 @@ func (g *GitHubResolver) Get(ctx context.Context, req api.GetCredentialsRequest)
 		},
 	}, nil
 }
-
-type ghCLITokenSource struct{}
 
 // path precedence: GH_CONFIG_DIR, XDG_CONFIG_HOME, AppData (windows only), HOME.
 func configDir() string {
@@ -192,4 +215,22 @@ type HostsFile map[string]HostConfig
 
 type HostConfig struct {
 	OAuthToken string `json:"oauth_token"`
+}
+
+func selectTokenSource() (oauth2.TokenSource, error) {
+	if tokenSource, err := NewGitHubTokenSourceFromEnv(); err == nil {
+		logging.Basicf("using GitHub token from environment")
+		return tokenSource, nil
+	}
+	tokenSource, err := NewGitHubTokenSourceFromFile()
+	if err == nil {
+		logging.Debugf("loaded GitHub hosts file from %s", filepath.Join(configDir(), "hosts.yml"))
+		return tokenSource, nil
+	}
+	token, err := keyring.Get("gh:github.com", "")
+	if err == nil {
+		logging.Basicf("using GitHub token from keyring")
+		return &GitHubTokenSource{token: token}, nil
+	}
+	return nil, errors.New("no GitHub token found")
 }

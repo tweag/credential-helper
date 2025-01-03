@@ -12,6 +12,13 @@ local_path_override(
     path = "../..",
 )
 
+bazel_dep(name = "rules_oci", version = "2.2.0")
+single_version_override(
+    module_name = "rules_oci",
+    patch_strip = 1,
+    patches = ["//:rules_oci.patch"],
+)
+
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 http_file(
@@ -48,3 +55,17 @@ http_file(
 #     strip_prefix = "credential-helper-private-0.0.1",
 #     urls = ["https://github.com/tweag/credential-helper-private/archive/refs/tags/v0.0.1.tar.gz"],
 # )
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "ghcr_oci",
+    digest = "sha256:2d4e459f4ecb5329407ae3e47cbc107a2fbace221354ca75960af4c047b3cb13",
+    image = "ghcr.io/tweag/credential-helper-private-image",
+)
+oci.pull(
+    name = "docker_hub_hello_world",
+    digest = "sha256:5b3cc85e16e3058003c13b7821318369dad01dac3dbb877aac3c28182255c724",
+    image = "hello-world",
+    platforms = ["linux/amd64"],
+)
+use_repo(oci, "docker_hub_hello_world_linux_amd64", "ghcr_oci")
