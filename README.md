@@ -49,6 +49,7 @@ The following providers are supported as of today:
 - [Cloudflare R2](/docs/providers/r2.md)
 - [Google Cloud Storage (GCS)](/docs/providers/gcs.md)
 - [GitHub](/docs/providers/github.md)
+- [Container Registries](/docs/providers/oci.md)
 
 ## Installation and usage
 
@@ -157,6 +158,8 @@ The following options exist:
   Idle timeout of the agent in [Go duration format][go_duration]. The agent will run in the background and wait for connections until the idle timeout is reached. Defaults to 3h. A negative value disables idle shutdowns.
 - `$CREDENTIAL_HELPER_PRUNE_INTERVAL`:
   Duration between cache prunes in [Go duration format][go_duration]. Defaults to 1m. A negative value disables cache pruning.
+- `$CREDENTIAL_HELPER_GUESS_OCI_REGISTRY`:
+  If set to 1, the credential helper will allow any uri that looks like a container registry to obtain authentication tokens from the docker `config.json`. If turned off, only a well-known subset of registries is supported.
 
 Additionally, you can configure how the installer behaves by adding any of the following settings to your `.bazelrc`:
 
