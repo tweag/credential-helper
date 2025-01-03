@@ -83,6 +83,7 @@ const (
 	LogLevelEnv         = "CREDENTIAL_HELPER_LOGGING"
 	IdleTimeoutEnv      = "CREDENTIAL_HELPER_IDLE_TIMEOUT"
 	PruneIntervalEnv    = "CREDENTIAL_HELPER_PRUNE_INTERVAL"
+	GuessOCIRegistryEnv = "CREDENTIAL_HELPER_GUESS_OCI_REGISTRY"
 	// The working directory for the agent and client process.
 	// On startup, we chdir into it.
 	WorkdirEnv = "CREDENTIAL_HELPER_WORKDIR"
