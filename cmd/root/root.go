@@ -83,7 +83,7 @@ func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.
 		logging.Debugf("cache hit")
 		err := json.NewEncoder(os.Stdout).Encode(resp)
 		if err != nil {
-			logging.Fatalf("%s", err)
+			logging.Fatalf("printing cached response to stdout: %s", err)
 		}
 		return
 	} else if !errors.Is(err, api.CacheMiss) {
@@ -104,7 +104,7 @@ func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.
 
 	err = json.NewEncoder(os.Stdout).Encode(resp)
 	if err != nil {
-		logging.Fatalf("%s", err)
+		logging.Fatalf("printing response to stdout: %s", err)
 	}
 
 	cacheValue := api.CachableGetCredentialsResponse{
@@ -112,7 +112,7 @@ func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.
 		Response: resp,
 	}
 	if err := cache.Store(ctx, cacheValue); err != nil {
-		logging.Fatalf("%s", err)
+		logging.Fatalf("storing resoponse in cache: %s", err)
 	}
 }
 
