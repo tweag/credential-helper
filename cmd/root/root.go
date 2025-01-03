@@ -189,6 +189,8 @@ func clientCommandProcess(command string, r io.Reader) {
 
 // agent process runs in the background and caches responses.
 func agentProcess(ctx context.Context, newCache api.NewCache) {
+	logging.Debugf("starting agent %v", os.Getpid())
+	defer logging.Debugf("agent %v shutting down", os.Getpid())
 	if shouldRunStandalone() {
 		logging.Fatalf("running as agent is not supported in standalone mode")
 	}
@@ -204,11 +206,12 @@ func agentProcess(ctx context.Context, newCache api.NewCache) {
 	}
 	service, cleanup, err := agent.NewCachingAgent(sockPath, pidPath, newCache(), idleTimeout, pruneInterval)
 	if err != nil {
-		logging.Fatalf("%v", err)
+		logging.Errorf("%v", err)
+		return
 	}
 	defer cleanup()
 	if err := service.Serve(ctx); err != nil {
-		logging.Fatalf("%v", err)
+		logging.Errorf("%v", err)
 	}
 }
 
