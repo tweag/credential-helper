@@ -51,6 +51,29 @@ func bazelCommands(startupFlags []string) [][]string {
 	return commands
 }
 
+func runBazelCommands(bazel, workspaceDir string) error {
+	var startupFlags []string
+
+	root, cleanupRoot := outputUserRoot()
+	defer cleanupRoot()
+	if len(root) > 0 {
+		startupFlags = append(startupFlags, "--output_user_root="+root)
+	}
+
+	commands := bazelCommands(startupFlags)
+	for _, command := range commands {
+		cmd := exec.Command(bazel, command...)
+		cmd.Dir = workspaceDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			return fmt.Errorf("bazel integration test failed for command %v: %v", command, err)
+		}
+	}
+	return nil
+}
+
 func absolutifyEnvVars() error {
 	keys := strings.Fields(os.Getenv("ENV_VARS_TO_ABSOLUTIFY"))
 	for _, key := range keys {
@@ -75,24 +98,29 @@ func main() {
 		panic(err)
 	}
 
-	var startupFlags []string
+	var failed bool
 
-	root, cleanupRoot := outputUserRoot()
-	defer cleanupRoot()
-	if len(root) > 0 {
-		startupFlags = append(startupFlags, "--output_user_root="+root)
+	integrationTestErr := runBazelCommands(bazel, workspaceDir)
+	if integrationTestErr != nil {
+		fmt.Fprintln(os.Stderr, integrationTestErr.Error())
+		failed = true
 	}
 
-	commands := bazelCommands(startupFlags)
-	for _, command := range commands {
-		cmd := exec.Command(bazel, command...)
-		cmd.Dir = workspaceDir
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err := cmd.Run()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "bazel integration test failed for command %v\n", command)
-			os.Exit(1)
-		}
+	// try to collect the logs from the agent
+	helper := filepath.Join(workspaceDir, "tools", "credential-helper")
+	if runtime.GOOS == "windows" {
+		helper += ".exe"
+	}
+	fmt.Fprintln(os.Stderr, "Collecting agent logs...")
+	cmd := exec.Command(helper, "agent-logs")
+	cmd.Dir = workspaceDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to collect agent logs: %v\n", err)
+	}
+
+	if failed {
+		os.Exit(1)
 	}
 }
