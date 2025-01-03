@@ -36,6 +36,11 @@ func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache, i
 	hardenAgentProcess()
 
 	_ = os.MkdirAll(filepath.Dir(agentLockPath), 0o755)
+	agentLock, err := lockfile.New(agentLockPath)
+	if err != nil {
+		return nil, func() error { return nil }, err
+	}
+
 	if !strings.HasPrefix(socketPath, "@") {
 		socketDir := filepath.Dir(socketPath)
 		_ = os.MkdirAll(socketDir, 0o755)
@@ -44,16 +49,12 @@ func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache, i
 		}
 	}
 
-	agentLock, err := lockfile.New(agentLockPath)
-	if err != nil {
-		return nil, func() error { return nil }, err
-	}
-
 	// delete the socket file if it already exists from a previous, dead agent
 	if !strings.HasPrefix(socketPath, "@") {
 		_ = os.Remove(socketPath)
 	}
 
+	logging.Debugf("agent %v listening on %s", os.Getpid(), socketPath)
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
 		return nil, func() error { return nil }, err
@@ -162,7 +163,7 @@ func (a *CachingAgent) handleConn(ctx context.Context, conn net.Conn) {
 		// reset the timeout for each request in a connection
 		// allows for correct keepalive when using long-living connections
 		a.idleTimer.Reset(a.idleTimeout)
-		logging.Debugf("received request: { method: %q, payload: %s }\n", req.Method, string(req.Payload))
+		logging.Debugf("received request with method: %q\n", req.Method)
 
 		var resp api.AgentResponse
 		var respErr error
@@ -189,7 +190,7 @@ func (a *CachingAgent) handleConn(ctx context.Context, conn net.Conn) {
 			resp = api.AgentResponse{Status: api.AgentResponseError, Payload: rawError}
 		}
 
-		logging.Debugf("sending response: { status: %q, payload: %s }\n", resp.Status, string(resp.Payload))
+		logging.Debugf("sending response with status: %q\n", resp.Status)
 		if err := json.NewEncoder(conn).Encode(resp); err != nil {
 			logging.Errorf("failed to encode response: %v\n", err)
 		}
