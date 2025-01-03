@@ -53,6 +53,10 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 	case strings.HasSuffix(u.Host, ".app.snowflake.com"):
 		return authenticateOCI.NewFallbackOCI(), nil
 	default:
+		if authenticateOCI.GuessOCIRegistry(rawURL) {
+			logging.Debugf("$CREDENTIAL_HELPER_GUESS_OCI_REGISTRY is set and uri looks like a registry: %s\n", rawURL)
+			return authenticateOCI.NewFallbackOCI(), nil
+		}
 		logging.Basicf("no matching credential helper found for %s - returning empty response\n", rawURL)
 		return authenticateNull.Null{}, nil
 	}

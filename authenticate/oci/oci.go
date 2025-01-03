@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -438,4 +439,21 @@ func deriveRepository(uri string) (registry, repository string, ignore bool, err
 
 	return u.Host, strings.TrimSuffix(endpoint, suffix), false, nil
 
+}
+
+// GuessOCIRegistry returns true if the given URI is likely to be an OCI registry.
+// Only guesses if $CREDENTIAL_HELPER_GUESS_OCI_REGISTRY is set to "1".
+func GuessOCIRegistry(uri string) bool {
+	value, ok := os.LookupEnv(api.GuessOCIRegistryEnv)
+	if !ok || value != "1" {
+		return false
+	}
+	_, _, ignore, err := deriveRepository(uri)
+	if err != nil {
+		return false
+	}
+	if ignore {
+		return false
+	}
+	return true
 }
