@@ -7,11 +7,12 @@ import (
 	"syscall"
 )
 
-func procAttrForAgentProcess() *os.ProcAttr {
+func procAttrForAgentProcess(stdout, stderr *os.File) *os.ProcAttr {
 	sys := syscall.SysProcAttr{
 		Setpgid: true,
 	}
 	return &os.ProcAttr{
-		Sys: &sys,
+		Sys:   &sys,
+		Files: []*os.File{nil, stdout, stderr},
 	}
 }

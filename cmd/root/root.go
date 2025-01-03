@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -44,6 +45,8 @@ func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewC
 		clientCommandProcess(api.AgentRequestShutdown, nil)
 	case "agent-prune":
 		clientCommandProcess(api.AgentRequestPrune, nil)
+	case "agent-logs":
+		agentLogsProcess()
 	case "agent-raw":
 		if len(args) < 3 {
 			logging.Fatalf("missing command argument")
@@ -112,7 +115,7 @@ func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.
 		Response: resp,
 	}
 	if err := cache.Store(ctx, cacheValue); err != nil {
-		logging.Fatalf("storing resoponse in cache: %s", err)
+		logging.Fatalf("storing response in cache: %s", err)
 	}
 }
 
@@ -206,6 +209,32 @@ func agentProcess(ctx context.Context, newCache api.NewCache) {
 	defer cleanup()
 	if err := service.Serve(ctx); err != nil {
 		logging.Fatalf("%v", err)
+	}
+}
+
+// agentLogsProcess prints the agent logs to stdout and stderr, then exits.
+func agentLogsProcess() {
+	stdoutPath := filepath.Join(locate.Run(), "agent.stdout")
+	stderrPath := filepath.Join(locate.Run(), "agent.stderr")
+
+	stdoutLog, err := os.Open(stdoutPath)
+	if err != nil {
+		logging.Fatalf("opening agent stdout log: %v", err)
+	}
+	defer stdoutLog.Close()
+	stderrLog, err := os.Open(stderrPath)
+	if err != nil {
+		logging.Fatalf("opening agent stderr log: %v", err)
+	}
+	defer stderrLog.Close()
+
+	_, err = io.Copy(os.Stdout, stdoutLog)
+	if err != nil {
+		logging.Fatalf("copying agent stdout log to stdout: %v", err)
+	}
+	_, err = io.Copy(os.Stderr, stderrLog)
+	if err != nil {
+		logging.Fatalf("copying agent stderr log to stderr: %v", err)
 	}
 }
 

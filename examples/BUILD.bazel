@@ -17,7 +17,6 @@ bazel_integration_tests(
         "AWS_REGION",
         "AWS_SECRET_ACCESS_KEY",
         "AWS_SESSION_TOKEN",
-        "CREDENTIAL_HELPER_LOGGING",
         "GH_TOKEN",
         "GHCR_TOKEN",
         "GITHUB_TOKEN",
@@ -26,6 +25,7 @@ bazel_integration_tests(
         "R2_SECRET_ACCESS_KEY",
     ],
     bazel_versions = bazel_binaries.versions.all,
+    env = {"CREDENTIAL_HELPER_LOGGING": "debug"},
     test_runner = "//bzl/private/integration_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("full") + [
         "//examples/testing:all_files",

@@ -14,6 +14,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//agent/internal/lockfile",
+        "//agent/locate",
         "//api",
         "//logging",
     ],

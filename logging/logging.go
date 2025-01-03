@@ -21,6 +21,10 @@ func SetLevel(l LogLevel) {
 	level = l
 }
 
+func GetLevel() LogLevel {
+	return level
+}
+
 func FromString(s string) LogLevel {
 	if numericLogLevel, err := strconv.Atoi(s); err == nil {
 		return boundedLogLevel(numericLogLevel)

@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 
+	"github.com/tweag/credential-helper/agent/locate"
 	"github.com/tweag/credential-helper/api"
+	"github.com/tweag/credential-helper/logging"
 )
 
 func LaunchAgentProcess() error {
@@ -14,7 +17,23 @@ func LaunchAgentProcess() error {
 	if err != nil {
 		return fmt.Errorf("finding path to own executable: %w", err)
 	}
-	proc, err := os.StartProcess(self, []string{self, "agent-launch"}, procAttrForAgentProcess())
+	var stdout, stderr *os.File
+	if logging.GetLevel() >= logging.LogLevelDebug {
+		// In debug mode, we want to see the agent's logs.
+		_ = os.MkdirAll(locate.Run(), 0700)
+		agentStdout, err := os.OpenFile(filepath.Join(locate.Run(), "agent.stdout"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+		if err != nil {
+			return fmt.Errorf("opening agent stdout file for logging: %w", err)
+		}
+		agentStderr, err := os.OpenFile(filepath.Join(locate.Run(), "agent.stderr"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+		if err != nil {
+			return fmt.Errorf("opening agent stderr file for logging: %w", err)
+		}
+		stdout, stderr = agentStdout, agentStderr
+		defer stdout.Close()
+		defer stderr.Close()
+	}
+	proc, err := os.StartProcess(self, []string{self, "agent-launch"}, procAttrForAgentProcess(stdout, stderr))
 	if err != nil {
 		return fmt.Errorf("starting agent process: %w", err)
 	}
