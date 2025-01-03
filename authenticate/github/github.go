@@ -23,7 +23,7 @@ import (
 type GitHub struct{}
 
 func (g *GitHub) Resolver(ctx context.Context) (api.Resolver, error) {
-	source, err := selectTokenSource()
+	source, err := selectTokenSource(tokenPurposeAPI)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func GitHubContainerRegistry() *oci.OCI {
 		},
 	}
 	resolver := func(ctx context.Context) (map[string]func(registry, service, realm string) (oci.AuthConfig, error), error) {
-		source, err := selectTokenSource()
+		source, err := selectTokenSource(tokenPurposeGHCR)
 		if err != nil {
 			logging.Debugf("no token source found for ghcr.io - allowing fallback to docker config: %v", err)
 			return nil, nil
@@ -150,7 +150,14 @@ type GitHubTokenSource struct {
 	token string
 }
 
-func NewGitHubTokenSourceFromEnv() (*GitHubTokenSource, error) {
+func NewGitHubTokenSourceFromEnv(purpose tokenPurpose) (*GitHubTokenSource, error) {
+	if purpose == tokenPurposeGHCR {
+		token, ok := os.LookupEnv("GHCR_TOKEN")
+		if ok {
+			return &GitHubTokenSource{token: token}, nil
+		}
+	}
+
 	token, ok := os.LookupEnv("GH_TOKEN")
 	if ok {
 		return &GitHubTokenSource{token: token}, nil
@@ -217,8 +224,15 @@ type HostConfig struct {
 	OAuthToken string `json:"oauth_token"`
 }
 
-func selectTokenSource() (oauth2.TokenSource, error) {
-	if tokenSource, err := NewGitHubTokenSourceFromEnv(); err == nil {
+type tokenPurpose string
+
+const (
+	tokenPurposeAPI  tokenPurpose = "api"
+	tokenPurposeGHCR tokenPurpose = "ghcr"
+)
+
+func selectTokenSource(purpose tokenPurpose) (oauth2.TokenSource, error) {
+	if tokenSource, err := NewGitHubTokenSourceFromEnv(purpose); err == nil {
 		logging.Basicf("using GitHub token from environment")
 		return tokenSource, nil
 	}
