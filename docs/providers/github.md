@@ -1,7 +1,16 @@
 # GitHub Authentication
 
 This document explains how to setup your system for authenticating to GitHub using the credential helper.
-The credential helper can be used to download any assets GitHub hosts, including [the git protocol via https][git-http], raw code files (`raw.githubusercontent.com/<org>/<repo>/<commit>/<file>`), patches (`github.com/<org>/<repo>/<commit>.patch`), source tarballs (`github.com/<org>/<repo>/archive/refs/tags/v1.2.3.tar.gz`), release assets (`github.com/<org>/<repo>/releases/download/v1.2.3/<file>`), and more.
+The credential helper can be used to download any assets GitHub hosts, including:
+
+- [the git protocol via https][git-http]
+- raw code files (`raw.githubusercontent.com/<org>/<repo>/<commit>/<file>`)
+- patches (`github.com/<org>/<repo>/<commit>.patch`)
+- source tarballs (`github.com/<org>/<repo>/archive/refs/tags/v1.2.3.tar.gz`)
+- release assets (`github.com/<org>/<repo>/releases/download/v1.2.3/<file>`)
+- container images from `ghcr.io` ([doc][doc-oci])
+- ... and more.
+
 With credentials, you are also less likely to be blocked by GitHub rate limits, even when accessing public repositories.
 
 ## Authentication Methods
@@ -40,3 +49,4 @@ If possible, switch to a GitHub CLI token (regular user) or a GitHub App (CI or 
 
 [gh-install]: https://github.com/cli/cli#installation
 [git-http]: https://git-scm.com/book/ms/v2/Git-on-the-Server-The-Protocols#_the_http_protocols
+[doc-oci]: /docs/providers/oci.md
