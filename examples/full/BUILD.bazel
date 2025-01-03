@@ -35,3 +35,21 @@ check_file_hash_test(
     ],
     data = ["@hello_world_gcs//file"],
 )
+
+check_file_hash_test(
+    name = "check_oci_ghcr",
+     args = [
+        "$(location @ghcr_oci//:ghcr_oci)/blobs/sha256/2d4e459f4ecb5329407ae3e47cbc107a2fbace221354ca75960af4c047b3cb13",
+        "2d4e459f4ecb5329407ae3e47cbc107a2fbace221354ca75960af4c047b3cb13",
+    ],
+    data = ["@ghcr_oci"],
+)
+
+check_file_hash_test(
+    name = "check_oci_docker_hub",
+     args = [
+        "$(location @docker_hub_hello_world_linux_amd64//:docker_hub_hello_world_linux_amd64)/blobs/sha256/e2fc4e5012d16e7fe466f5291c476431beaa1f9b90a5c2125b493ed28e2aba57",
+        "e2fc4e5012d16e7fe466f5291c476431beaa1f9b90a5c2125b493ed28e2aba57",
+    ],
+    data = ["@docker_hub_hello_world_linux_amd64"],
+)

@@ -10,6 +10,7 @@ go_library(
         "//authenticate/gcs",
         "//authenticate/github",
         "//authenticate/null",
+        "//authenticate/oci",
         "//authenticate/s3",
         "//logging",
     ],

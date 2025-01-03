@@ -8,6 +8,7 @@ import (
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
+	authenticateOCI "github.com/tweag/credential-helper/authenticate/oci"
 	authenticateS3 "github.com/tweag/credential-helper/authenticate/s3"
 	"github.com/tweag/credential-helper/logging"
 )
@@ -28,8 +29,29 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		fallthrough
 	case strings.EqualFold(u.Host, "raw.githubusercontent.com"):
 		return &authenticateGitHub.GitHub{}, nil
+	case strings.EqualFold(u.Host, "ghcr.io"):
+		return authenticateGitHub.GitHubContainerRegistry(), nil
 	case strings.HasSuffix(strings.ToLower(u.Host), ".r2.cloudflarestorage.com"):
 		return &authenticateS3.R2{}, nil
+	// container registries using the default OCI resolver
+	case strings.EqualFold(u.Host, "index.docker.io"):
+		fallthrough
+	case strings.EqualFold(u.Host, "public.ecr.aws"):
+		fallthrough
+	case strings.EqualFold(u.Host, "cgr.dev"):
+		fallthrough
+	case strings.EqualFold(u.Host, "registry.gitlab.com"):
+		fallthrough
+	case strings.EqualFold(u.Host, "docker.elastic.co"):
+		fallthrough
+	case strings.EqualFold(u.Host, "quay.io"):
+		fallthrough
+	case strings.EqualFold(u.Host, "nvcr.io"):
+		fallthrough
+	case strings.HasSuffix(u.Host, ".azurecr.io"):
+		fallthrough
+	case strings.HasSuffix(u.Host, ".app.snowflake.com"):
+		return authenticateOCI.NewFallbackOCI(), nil
 	default:
 		logging.Basicf("no matching credential helper found for %s - returning empty response\n", rawURL)
 		return authenticateNull.Null{}, nil
