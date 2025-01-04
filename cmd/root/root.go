@@ -135,7 +135,7 @@ func launchOrConnectAgent() (api.Cache, func() error, error) {
 	logging.Debugf("launched agent")
 
 	sockPath, _ := locate.AgentPaths()
-	logging.Debugf("connecting to agent at %s", sockPath)
+	logging.Debugf("connecting to agent on %s in %s", sockPath, locate.Workdir())
 	socketCache, err := cache.NewSocketCache(sockPath, time.Second)
 	if err != nil {
 		return nil, func() error { return nil }, err
