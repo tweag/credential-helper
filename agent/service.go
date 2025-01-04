@@ -82,12 +82,26 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 	defer a.wg.Wait()
 	defer a.lis.Close()
 
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Fprintln(os.Stderr, "recovered from panic in MyCustomTest: ", r)
+			}
+		}()
+	}()
+
 	a.idleTimer = time.NewTimer(a.idleTimeout)
 	a.pruneTimer = time.NewTimer(0)
 	acceptChan := make(chan net.Conn)
 	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Fprintln(os.Stderr, "recovered from panic in acceptLoop - shutting down: ", r)
+				_, _ = a.handleShutdown()
+			}
+		}()
 		// TODO: error handling
 		acceptErr = acceptLoop(a.lis, acceptChan)
 	}()
@@ -95,6 +109,12 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Fprintln(os.Stderr, "recovered from panic in idle timer: ", r)
+			}
+		}()
+
 		<-a.idleTimer.C
 		// use negative idleTimeout value to ignore the timeout signal
 		if a.idleTimeout >= 0 && !a.shutdownStarted.Load() {
@@ -106,6 +126,12 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Fprintln(os.Stderr, "recovered from panic in cache pruning timer: ", r)
+			}
+		}()
+
 		for !a.shutdownStarted.Load() {
 			<-a.pruneTimer.C
 			// use negative pruneInterval value to ignore the signal
@@ -132,6 +158,11 @@ func (a *CachingAgent) Serve(ctx context.Context) error {
 			a.wg.Add(1)
 			go func() {
 				defer a.wg.Done()
+				defer func() {
+					if r := recover(); r != nil {
+						fmt.Fprintln(os.Stderr, "recovered from panic in handleConn: ", r)
+					}
+				}()
 				a.handleConn(ctx, conn)
 			}()
 		}
