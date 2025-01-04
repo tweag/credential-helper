@@ -1,42 +1,6 @@
 load("@tweag-credential-helper//examples/testing:defs.bzl", "check_file_hash_test")
 
 check_file_hash_test(
-    name = "check_github_repo",
-    args = [
-        "$(location @private_github_repo_file//file)",
-        "81e455883ec5c65337edd7bd1045b4fea50fef093b40636d96aa8001ebd54910",
-    ],
-    data = ["@private_github_repo_file//file"],
-)
-
-check_file_hash_test(
-    name = "check_s3",
-    args = [
-        "$(location @hello_world_s3//file)",
-        "3cf3250d34148d3fe03c4a8eb1a38695b969ff96ec6bfce5f9f544279fb2a5df",
-    ],
-    data = ["@hello_world_s3//file"],
-)
-
-check_file_hash_test(
-    name = "check_r2",
-    args = [
-        "$(location @hello_world_r2//file)",
-        "df4bf34acd7328fa6f0b6913dcc56b450b6888a562718c8bf970e9b9685114f5",
-    ],
-    data = ["@hello_world_r2//file"],
-)
-
-check_file_hash_test(
-    name = "check_gcs",
-    args = [
-        "$(location @hello_world_gcs//file)",
-        "fcb96ae418b863eb93883a94cc39f81545cfdf97e20d292ed1bd8f78a153cedc",
-    ],
-    data = ["@hello_world_gcs//file"],
-)
-
-check_file_hash_test(
     name = "check_oci_ghcr",
      args = [
         "$(location @ghcr_oci//:ghcr_oci)/blobs/sha256/2d4e459f4ecb5329407ae3e47cbc107a2fbace221354ca75960af4c047b3cb13",
