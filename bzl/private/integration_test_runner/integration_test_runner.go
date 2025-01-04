@@ -45,6 +45,8 @@ func bazelCommands(startupFlags []string) [][]string {
 
 	commands = append(commands, bazelCommand([]string{"info"}, startupFlags))
 	commands = append(commands, bazelCommand([]string{"run", installerTarget()}, startupFlags))
+	// shutdown Bazel after install to ensure
+	// any failed fetches are retried with a helper in place
 	commands = append(commands, bazelCommand([]string{"shutdown"}, startupFlags))
 	commands = append(commands, bazelCommand([]string{"test", "//..."}, startupFlags))
 
@@ -59,6 +61,16 @@ func runBazelCommands(bazel, workspaceDir string) error {
 	if len(root) > 0 {
 		startupFlags = append(startupFlags, "--output_user_root="+root)
 	}
+
+	defer func() {
+		// shut down Bazel after all tests to conserve memory
+		shutdownCmd := bazelCommand([]string{"shutdown"}, startupFlags)
+		cmd := exec.Command(bazel, shutdownCmd...)
+		cmd.Dir = workspaceDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		_ = cmd.Run()
+	}()
 
 	commands := bazelCommands(startupFlags)
 	for _, command := range commands {

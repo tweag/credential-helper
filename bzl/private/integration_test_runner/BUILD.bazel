@@ -2,7 +2,7 @@ load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "integration_test_runner_lib",
-    srcs = ["integraion_test_runner.go"],
+    srcs = ["integration_test_runner.go"],
     importpath = "github.com/tweag/credential-helper/bzl/private/integration_test_runner",
     visibility = ["//visibility:public"],
 )
