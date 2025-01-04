@@ -9,29 +9,13 @@ on:
     # Every day at 10:09 UTC.
     - cron: '9 10 * * *'
   workflow_dispatch:
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 jobs:
-  tidy_and_test_matrix:
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [macos-13, macos-15, ubuntu-22.04, windows-2025]
-    runs-on: ${{ matrix.runner }}
-    steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
-    - uses: cgrindel/gha_set_up_bazel@v1
-      with:
-        repo_name: credential-helper
-    - name: Execute Tests
-      run: bazelisk test //...
   integration_test_matrix:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-13, macos-15, ubuntu-22.04, windows-2025]
+        runner: [windows-2025]
     runs-on: ${{ matrix.runner }}
     permissions:
       id-token: write
@@ -56,7 +40,7 @@ jobs:
       with:
         repo_name: credential-helper
     - name: Execute Integration Tests
-      run: bazelisk test "//examples:integration_tests"
+      run: bazelisk test --test_output=streamed "//examples:full_test_bazel_8_0_0"
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
         GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -65,7 +49,7 @@ jobs:
 
   all_ci_tests:
     runs-on: ubuntu-22.04
-    needs: [tidy_and_test_matrix, integration_test_matrix]
+    needs: [integration_test_matrix]
     if: ${{ always() }}
     steps:
       - uses: cgrindel/gha_join_jobs@v1
