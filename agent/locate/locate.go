@@ -55,6 +55,8 @@ func setupWorkspaceDirectory() (string, error) {
 			return "", lookupErr
 		}
 	}
+
+	workspacePath = filepath.FromSlash(workspacePath)
 	return workspacePath, os.Setenv(api.WorkspaceEnv, workspacePath)
 }
 
@@ -68,8 +70,9 @@ func setupWorkdir(workspacePath string) (string, error) {
 	// is ${cache_dir}/tweag-credential-helper/${workdir_hash}
 	cacheDir := cacheDir()
 	workdirPath = filepath.Join(cacheDir, "tweag-credential-helper", workdirHash(workspacePath))
-	return workdirPath, os.Setenv(api.WorkdirEnv, workdirPath)
 
+	workdirPath = filepath.FromSlash(workdirPath)
+	return workdirPath, os.Setenv(api.WorkdirEnv, workdirPath)
 }
 
 func LookupPathEnv(key, fallback string, shortPath bool) string {
@@ -145,6 +148,13 @@ func homeDir() string {
 }
 
 func workdirHash(workspaceDirectory string) string {
+	if runtime.GOOS == "windows" {
+		// Windows filesystems are case-insensitive
+		// And some APIs in Windows return paths in lowercase
+		// while others return them in mixed case.
+		// Normalize for correctness.
+		workspaceDirectory = strings.ToLower(workspaceDirectory)
+	}
 	return fmt.Sprintf("%x", md5.Sum([]byte(workspaceDirectory)))
 }
 

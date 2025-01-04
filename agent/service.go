@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/tweag/credential-helper/agent/internal/lockfile"
+	"github.com/tweag/credential-helper/agent/locate"
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/logging"
 )
@@ -54,7 +55,7 @@ func NewCachingAgent(socketPath string, agentLockPath string, cache api.Cache, i
 		_ = os.Remove(socketPath)
 	}
 
-	logging.Debugf("agent %v listening on %s", os.Getpid(), socketPath)
+	logging.Debugf("agent %v listening on %s in %s", os.Getpid(), socketPath, locate.Workdir())
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
 		return nil, func() error { return nil }, err
