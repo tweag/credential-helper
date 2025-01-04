@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+type commandLine struct {
+	name string
+	args []string
+}
+
 func outputUserRoot() (string, func() error) {
 	if runtime.GOOS != "windows" {
 		return "", func() error { return nil }
@@ -33,27 +38,26 @@ func installerTarget() string {
 	return "@tweag-credential-helper//installer"
 }
 
-func bazelCommand(command []string, startupFlags []string) []string {
-	var out []string
-	out = append(out, startupFlags...)
-	out = append(out, command...)
-	return out
+func bazelCommand(name string, command []string, startupFlags []string) commandLine {
+	var args []string
+	args = append(args, startupFlags...)
+	args = append(args, command...)
+	return commandLine{name: name, args: args}
 }
 
-func bazelCommands(startupFlags []string) [][]string {
-	var commands [][]string
+func bazelCommands(bazel string, startupFlags []string) (setup []commandLine, tests []commandLine, shutdown []commandLine) {
+	var setupCommands []commandLine
 
-	commands = append(commands, bazelCommand([]string{"info"}, startupFlags))
-	commands = append(commands, bazelCommand([]string{"run", installerTarget()}, startupFlags))
+	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"info"}, startupFlags))
+	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"run", installerTarget()}, startupFlags))
 	// shutdown Bazel after install to ensure
 	// any failed fetches are retried with a helper in place
-	commands = append(commands, bazelCommand([]string{"shutdown"}, startupFlags))
-	commands = append(commands, bazelCommand([]string{"test", "//..."}, startupFlags))
+	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"shutdown"}, startupFlags))
 
-	return commands
+	return setupCommands, []commandLine{bazelCommand(bazel, []string{"test", "//..."}, startupFlags)}, []commandLine{bazelCommand(bazel, []string{"shutdown"}, startupFlags)}
 }
 
-func runBazelCommands(bazel, workspaceDir string) error {
+func runBazelCommands(bazel, helper, workspaceDir string) error {
 	var startupFlags []string
 
 	root, cleanupRoot := outputUserRoot()
@@ -62,19 +66,44 @@ func runBazelCommands(bazel, workspaceDir string) error {
 		startupFlags = append(startupFlags, "--output_user_root="+root)
 	}
 
+	setupCommands, testCommands, shutdownCommands := bazelCommands(bazel, startupFlags)
+
 	defer func() {
 		// shut down Bazel after all tests to conserve memory
-		shutdownCmd := bazelCommand([]string{"shutdown"}, startupFlags)
-		cmd := exec.Command(bazel, shutdownCmd...)
+		for _, shutdownCmd := range shutdownCommands {
+			cmd := exec.Command(shutdownCmd.name, shutdownCmd.args...)
+			cmd.Dir = workspaceDir
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			_ = cmd.Run()
+		}
+	}()
+
+	for _, command := range setupCommands {
+		cmd := exec.Command(command.name, command.args...)
 		cmd.Dir = workspaceDir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		_ = cmd.Run()
-	}()
+		err := cmd.Run()
+		if err != nil {
+			return fmt.Errorf("bazel integration test setup step failed for command %v: %v", command, err)
+		}
+	}
 
-	commands := bazelCommands(startupFlags)
-	for _, command := range commands {
-		cmd := exec.Command(bazel, command...)
+	agentCmd := exec.Command(helper, "agent-launch")
+	agentCmd.Dir = workspaceDir
+	agentCmd.Stdout = os.Stdout
+	agentCmd.Stderr = os.Stderr
+	agentStartErr := agentCmd.Start()
+	if agentStartErr != nil {
+		return fmt.Errorf("failed to start agent: %v", agentStartErr)
+	}
+	// TODO: handle shutdown of agent more gracefully
+	defer agentCmd.Wait()
+	defer agentCmd.Process.Kill()
+
+	for _, command := range testCommands {
+		cmd := exec.Command(command.name, command.args...)
 		cmd.Dir = workspaceDir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -105,6 +134,10 @@ func absolutifyEnvVars() error {
 func main() {
 	bazel := os.Getenv("BIT_BAZEL_BINARY")
 	workspaceDir := os.Getenv("BIT_WORKSPACE_DIR")
+	helper := filepath.Join(workspaceDir, "tools", "credential-helper")
+	if runtime.GOOS == "windows" {
+		helper += ".exe"
+	}
 
 	if err := absolutifyEnvVars(); err != nil {
 		panic(err)
@@ -112,17 +145,13 @@ func main() {
 
 	var failed bool
 
-	integrationTestErr := runBazelCommands(bazel, workspaceDir)
+	integrationTestErr := runBazelCommands(bazel, helper, workspaceDir)
 	if integrationTestErr != nil {
 		fmt.Fprintln(os.Stderr, integrationTestErr.Error())
 		failed = true
 	}
 
 	// try to collect the logs from the agent
-	helper := filepath.Join(workspaceDir, "tools", "credential-helper")
-	if runtime.GOOS == "windows" {
-		helper += ".exe"
-	}
 	fmt.Fprintln(os.Stderr, "Collecting agent logs...")
 	cmd := exec.Command(helper, "agent-logs")
 	cmd.Dir = workspaceDir
