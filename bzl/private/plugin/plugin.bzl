@@ -1,18 +1,18 @@
-load("@rules_go//go:def.bzl", "go_binary", "go_library", "GoLibrary")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("@rules_go//go:def.bzl", "GoLibrary", "go_binary", "go_library")
 load("//bzl/private/config:defs.bzl", "HelperTargetPlatformInfo")
 load("//bzl/private/prebuilt:prebuilt.bzl", "PrebuiltHelperInfo")
 
 def credential_helper(
-    *,
-    name,
-    helperfactory,
-    helperfactory_type_name = "Factory",
-    cache,
-    cache_type_name = "NewCache",
-    extra_srcs = [],
-    extra_deps = [Label("@tweag-credential-helper//cmd/root")],
-    **kwargs):
+        *,
+        name,
+        helperfactory,
+        helperfactory_type_name = "Factory",
+        cache,
+        cache_type_name = "NewCache",
+        extra_srcs = [],
+        extra_deps = [Label("@tweag-credential-helper//cmd/root")],
+        **kwargs):
     credential_helper_plugin(
         name = "{}_helperfactory".format(name),
         go_library = helperfactory,
@@ -59,7 +59,6 @@ def _credential_helper_plugin_impl(ctx):
     )
     return [DefaultInfo(files = depset(direct = [ctx.outputs.out]))]
 
-
 credential_helper_plugin = rule(
     implementation = _credential_helper_plugin_impl,
     attrs = {
@@ -101,16 +100,13 @@ def _installer_impl(ctx):
     os = target_platform_info.os
     cpu = target_platform_info.cpu
 
-    destination = ctx.attr._default_install_destination_windows[BuildSettingInfo].value \
-        if os == "windows" \
-        else ctx.attr._default_install_destination_unix[BuildSettingInfo].value
-    target_specific_destination = ctx.attr.destination_windows \
-        if os == "windows" \
-        else ctx.attr.destination_unix
+    destination = ctx.attr._default_install_destination_windows[BuildSettingInfo].value if os == "windows" else ctx.attr._default_install_destination_unix[BuildSettingInfo].value
+    target_specific_destination = ctx.attr.destination_windows if os == "windows" else ctx.attr.destination_unix
     if len(target_specific_destination) > 0:
         destination = target_specific_destination
 
     helper = None
+
     # fall back to use helper from source (if available and allowed)
     if allow_from_source and ctx.executable.credential_helper != None:
         helper = ctx.executable.credential_helper
@@ -151,7 +147,7 @@ def _installer_impl(ctx):
             runfiles = runfiles,
             executable = installer,
         ),
-        RunEnvironmentInfo(env, ctx.attr.env_inherit)
+        RunEnvironmentInfo(env, ctx.attr.env_inherit),
     ]
 
 installer = rule(
@@ -193,7 +189,7 @@ installer = rule(
             default = Label("//bzl/config:default_install_destination_unix"),
             providers = [BuildSettingInfo],
         ),
-         "_default_install_destination_windows": attr.label(
+        "_default_install_destination_windows": attr.label(
             default = Label("//bzl/config:default_install_destination_windows"),
             providers = [BuildSettingInfo],
         ),

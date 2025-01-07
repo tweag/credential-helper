@@ -20,7 +20,7 @@ prebuilt_helper_info = rule(
 )
 
 def _prebuilt_collection_hub_repo_impl(rctx):
-    select_arms = {"@rules_go//go/platform:" + k: v for (k,v) in rctx.attr.helpers.items()}
+    select_arms = {"@rules_go//go/platform:" + k: v for (k, v) in rctx.attr.helpers.items()}
     select_arms |= {"//conditions:default": None}
     helper_rhs = "select({})".format(json.encode_indent(select_arms, prefix = "    ", indent = "    "))
     helper_rhs = helper_rhs.replace("null", "None")
@@ -58,7 +58,7 @@ def _prebuilt_credential_helper_repo_impl(rctx):
         urls,
         output = "credential-helper.exe",
         executable = True,
-        integrity = rctx.attr.integrity
+        integrity = rctx.attr.integrity,
     )
     rctx.file(
         "BUILD.bazel",
@@ -134,12 +134,12 @@ def _prebuilt_credential_helpers(ctx):
     for item in requested_helpers.items():
         prebuilt_credential_helper_repo(
             name = item[0],
-            **item[1],
+            **item[1]
         )
     for (collection_name, collection) in collections.items():
         helpers = {}
         for ((os, arch), helper_repo_name) in collection["helpers"].items():
-            helpers["%s_%s" % (os, arch) ] = "@%s//:credential-helper.exe" % helper_repo_name
+            helpers["%s_%s" % (os, arch)] = "@%s//:credential-helper.exe" % helper_repo_name
         prebuilt_collection_hub_repo(
             name = collection_name,
             helpers = helpers,
@@ -152,10 +152,10 @@ def _prebuilt_credential_helpers(ctx):
     )
 
 prebuilt_credential_helpers = module_extension(
-  implementation = _prebuilt_credential_helpers,
-  tag_classes = {
-    "collection": _prebuilt_helper_collection,
-    "from_file": _prebuilt_helper_from_file,
-    "download": _prebuilt_helper_download,
-  },
+    implementation = _prebuilt_credential_helpers,
+    tag_classes = {
+        "collection": _prebuilt_helper_collection,
+        "from_file": _prebuilt_helper_from_file,
+        "download": _prebuilt_helper_download,
+    },
 )

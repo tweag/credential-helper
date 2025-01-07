@@ -38,6 +38,10 @@ pkg_tar(
     srcs = [":srcs"],
     out = "tweag-credential-helper.tar.xz",
     extension = "tar.xz",
+    # TODO: mode should come from
+    # attributes in `SourceFilesInfo`,
+    # but doesn't for some reason.
+    mode = "0755",
     tags = ["manual"],
 )
 
@@ -56,6 +60,10 @@ pkg_tar(
         ":release",
     ],
     out = "dist.tar",
+    # TODO: mode should come from
+    # attributes in `SourceFilesInfo`,
+    # but doesn't for some reason.
+    mode = "0755",
     tags = ["manual"],
 )
 

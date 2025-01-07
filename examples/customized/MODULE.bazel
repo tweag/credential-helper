@@ -26,6 +26,7 @@ use_repo(
 )
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
 http_file(
     name = "httpbin_basic_auth",
     integrity = "sha256-hi30bEnTmTImYUomWswEYBaeudFpUdWB6fE5FTrZUTg=",
