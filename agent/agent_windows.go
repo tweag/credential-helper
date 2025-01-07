@@ -8,7 +8,7 @@ func hardenAgentProcess() {
 	// On Windows, we don't have the concept of umask, so this function is a no-op.
 }
 
-func hardenSocketDir(socketDir string) error {
+func hardenSocketDir(_ string) error {
 	// the unix version of this function changes the ownership and permissions of the socket directory
 	// to limit who can access the agent's socket.
 	// On Windows, this would require changing the ACLs of the directory, which is more complex.
