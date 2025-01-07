@@ -1,6 +1,11 @@
-# credential-helper
+# tweag-credential-helper
 
-A credential-helper framework and agent for [Bazel](https://bazel.build/) and similar tools implementing the [credential-helper spec][spec].
+*A credential-helper framework and agent for [Bazel](https://bazel.build/) and similar tools implementing the [credential-helper spec][spec].*
+
+Many build tools need access to external resources—such as tarballs from a Git forge, container images, prebuilt artifacts, and large datasets.
+Tools like Bazel often require authentication with HTTP servers to download these files.
+This project provides a credential helper that automatically injects authentication headers based on the request URI, simplifying the process of securing your build dependencies:
+Instead of configuring credentials in your code, a credential helper decouples the authentication of requests from the configuration of external dependencies.
 
 ## Key Features
 
@@ -137,6 +142,8 @@ Alternatively, you can [write custom plugins that are part of your own Bazel wor
 
 Follow the [provider-specific documentation](/docs/providers/) to ensure you can authenticate to the service.
 
+You can also look at the [example project](/examples/full/) to see how everything works together.
+
 ## Configuration
 
 You can use environment variables to configure the helper.
@@ -171,7 +178,6 @@ Additionally, you can configure how the installer behaves by adding any of the f
   Configures the install destination of the credential helper on Windows. Subject to [prefix expansion](#prefix-expansion). Defaults to `%workspace%\tools\credential-helper.exe`, which is the path used in `.bazelrc` by default.
   Windows cannot make use of the shell wrapper, so this binary is copied to the source tree instead of a path relative to the workdir.
 
-
 ### <a name="prefix-expansion"></a> Prefix Expansion
 
 Configuration options (including envionment variables and Bazel flags) that refer to paths are subject to prefix expansion. Special prefixes listed below will be replaced by concrete paths at runtime.
@@ -202,6 +208,12 @@ Configuration options (including envionment variables and Bazel flags) that refe
     ```
     echo '{"uri": "https://example.com/foo"}' | CREDENTIAL_HELPER_LOGGING=debug tools/credential-helper get
     ```
+
+## Hacking & Contributing
+
+We invite external contributions and are eager to work together with the build systems community.
+Please refer to the [CONTRIBUTING](/docs/CONTRIBUTING.md) guide to learn more.
+If you want to check out the code and run a development version, follow the [HACKING](/docs/HACKING.md) guide to get started. 
 
 ## Security Considerations  
 
