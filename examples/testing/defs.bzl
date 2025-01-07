@@ -7,7 +7,7 @@ def _check_file_hash_test_impl(ctx):
     )
 
     runfiles = ctx.runfiles(
-        transitive_files =  depset(transitive = [data[DefaultInfo].files for data in ctx.attr.data]),
+        transitive_files = depset(transitive = [data[DefaultInfo].files for data in ctx.attr.data]),
     ).merge_all([data[DefaultInfo].default_runfiles for data in ctx.attr.data])
     return [
         DefaultInfo(

@@ -1,3 +1,4 @@
+load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes")
 load("@rules_pkg//pkg:providers.bzl", "PackageFilesInfo")
 load("//bzl/private/config:defs.bzl", "ModuleVersionInfo")
 
@@ -36,9 +37,9 @@ _goarch_list = [
 ]
 
 _os_to_arches = {
-   GOOS_LINUX: [GOARCH_386, GOARCH_AMD64, GOARCH_ARM64],
-   GOOS_DARWIN: [GOARCH_AMD64, GOARCH_ARM64],
-   GOOS_WINDOWS: [GOARCH_AMD64, GOARCH_ARM64],
+    GOOS_LINUX: [GOARCH_386, GOARCH_AMD64, GOARCH_ARM64],
+    GOOS_DARWIN: [GOARCH_AMD64, GOARCH_ARM64],
+    GOOS_WINDOWS: [GOARCH_AMD64, GOARCH_ARM64],
 }
 
 def _generate_platforms():
@@ -84,7 +85,6 @@ def _release_platforms_transition_impl(_settings, _attr):
         for platform in _platform_names
     }
 
-
 release_platforms_transition = transition(
     implementation = _release_platforms_transition_impl,
     inputs = [],
@@ -96,6 +96,9 @@ release_platforms_transition = transition(
         "@tweag-credential-helper//bzl/private/release:release_platform",
     ],
 )
+
+DEFAULT_ATTRIBUTES = pkg_attributes(mode = "0644")
+EXECUTABLE_ATTRIBUTES = pkg_attributes(mode = "0755")
 
 OverrideSourceFilesInfo = provider(
     doc = """Provider representing overrides for a rules_pkg PackageFilesInfo""",
@@ -109,7 +112,7 @@ most often strings, but are not explicitly defined.
 For known attributes and data type expectations, see the Common
 Attributes documentation in the `rules_pkg` reference.
         """,
-    "dest_src_map": """Map of file destinations to sources.
+        "dest_src_map": """Map of file destinations to sources.
 
 Sources are represented by bazel `File` structures.""",
     },
@@ -128,15 +131,21 @@ def _release_files(ctx):
     dest_src_map = {
         "tools/credential-helper.sh": ctx.file.shell_stub,
     }
+    attributes = {
+        "tools/credential-helper.sh": EXECUTABLE_ATTRIBUTES,
+    }
     for platform in _platform_names:
         src = ctx.split_attr.executable[platform]
         executable = src[DefaultInfo].files_to_run.executable
         basename = ctx.attr.basename if len(ctx.attr.basename) > 0 else executable.basename
+
         # ensure we copy the extension from the executable (for Windows)
         dot_extension = ""
         if len(executable.extension) > 0 and not basename.endswith("." + executable.extension):
             dot_extension = "." + executable.extension
-        dest_src_map["bin/%s_%s%s" % (basename, platform, dot_extension)] = executable
+        filename = "bin/%s_%s%s" % (basename, platform, dot_extension)
+        dest_src_map[filename] = executable
+        attributes[filename] = EXECUTABLE_ATTRIBUTES
         output_group_info["%s_files" % platform] = depset([executable])
         lockfile_args.add("--helper", "%s=%s" % (platform, executable.path))
     lockfile = ctx.actions.declare_file("%s_lockfile.json" % ctx.attr.name)
@@ -152,13 +161,16 @@ def _release_files(ctx):
     return [
         DefaultInfo(files = depset(dest_src_map.values())),
         OutputGroupInfo(**output_group_info),
-        PackageFilesInfo(attributes = {}, dest_src_map = dest_src_map),
-        OverrideSourceFilesInfo(attributes = {}, dest_src_map = {"prebuilt_lockfile.json": lockfile})
+        PackageFilesInfo(attributes = attributes, dest_src_map = dest_src_map),
+        OverrideSourceFilesInfo(
+            attributes = {"prebuilt_lockfile.json": DEFAULT_ATTRIBUTES},
+            dest_src_map = {"prebuilt_lockfile.json": lockfile},
+        ),
     ]
 
 release_files = rule(
-   implementation = _release_files,
-   attrs = {
+    implementation = _release_files,
+    attrs = {
         "executable": attr.label(
             cfg = release_platforms_transition,
             mandatory = True,
@@ -187,6 +199,9 @@ def _source_bundle_impl(ctx):
         if not file.is_source:
             fail("Bundling non-source file %s" % file.path)
         dest_src_map[file.path] = file
+        attributes[file.path] = DEFAULT_ATTRIBUTES
+        if file.extension in ["exe", "sh"] or file.path in ["tools/credential-helper"]:
+            attributes[file.path] = EXECUTABLE_ATTRIBUTES
     for override in ctx.attr.overrides:
         override = override[OverrideSourceFilesInfo]
         attributes.update(override.attributes)
@@ -226,7 +241,7 @@ def _versioned_filename_info_impl(ctx):
     dest_src_map = {dest: file}
     return [
         DefaultInfo(files = depset(dest_src_map.values())),
-        PackageFilesInfo(attributes = {}, dest_src_map = dest_src_map),
+        PackageFilesInfo(attributes = {dest: ctx.attr.attributes}, dest_src_map = dest_src_map),
     ]
 
 versioned_filename_info = rule(
@@ -236,6 +251,7 @@ versioned_filename_info = rule(
         "destdir": attr.string(),
         "extension": attr.string(),
         "path_template": attr.string(default = "{destdir}{slash}{stem}-v{version}{dot}{extension}"),
+        "attributes": attr.string(),
         "version": attr.label(
             default = "@tweag-credential-helper-version",
             providers = [ModuleVersionInfo],
