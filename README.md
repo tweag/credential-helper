@@ -62,7 +62,8 @@ You can either manually install a binary of the credential helper on your system
 Prebuilt artifacts can be found in the [GitHub releases][releases].
 If you want to manually install the helper, skip ahead to the [configuration](#configuration) after installing the binary yourself.
 
-Add the following to your `MODULE.bazel` if you want to perform the recommended installation:
+Add the following to your `MODULE.bazel` if you want to perform the recommended installation.
+The latest release can always be found on the [Bazel Central Registry][bcr]:
 
 ```starlark
 bazel_dep(name = "tweag-credential-helper", version = "0.0.1")
@@ -247,3 +248,4 @@ The agent does not implement additional countermeasures. Consequently, access to
 [releases]: https://github.com/tweag/credential-helper/releases
 [go_duration]: https://pkg.go.dev/time#ParseDuration
 [plugins]: /docs/plugins.md
+[bcr]: https://registry.bazel.build/modules/tweag-credential-helper
