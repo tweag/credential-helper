@@ -47,11 +47,6 @@ bazel_dep(
     version = "0.30.0",
     dev_dependency = True,
 )
-single_version_override(
-    module_name = "rules_bazel_integration_test",
-    patches = ["//examples/testing:upgrade_bazelisk.patch"],
-    patch_strip = 1,
-)
 
 bazel_binaries = use_extension(
     "@rules_bazel_integration_test//:extensions.bzl",
