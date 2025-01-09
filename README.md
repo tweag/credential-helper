@@ -172,7 +172,7 @@ The following options exist:
 Additionally, you can configure how the installer behaves by adding any of the following settings to your `.bazelrc`:
 
 - `--@tweag-credential-helper//bzl/config:helper_build_mode={auto,from_source,prebuilt}`:
-  Configures how the credential helper is built and wether or not a Go toolchain is required. The `prebuilt` setting only allows downloading a preregistered and prebuilt helper binary. This is fast and doesn't require a Go toolchain, but may fail if no prebuilt binary for your host platform is available. `from_source` forces building the `go_binary` from source and requires registering a Go toolchain. `auto` (the default) prefers the use of a prebuilt, but allows falling back to building from source.
+  Configures how the credential helper is built and whether or not a Go toolchain is required. The `prebuilt` setting only allows downloading a preregistered and prebuilt helper binary. This is fast and doesn't require a Go toolchain, but may fail if no prebuilt binary for your host platform is available. `from_source` forces building the `go_binary` from source and requires registering a Go toolchain. `auto` (the default) prefers the use of a prebuilt, but allows falling back to building from source.
 - `--@tweag-credential-helper//bzl/config:default_install_destination_unix=<path>`:
   Configures the install destination of the credential helper on Unix (Linux, macOS). Subject to [prefix expansion](#prefix-expansion). Defaults to `%workdir%/bin/credential-helper`, which is the path used by the shell wrapper. If you set this to a workspace relative path like `%workspace%/tools/my-helper-binary`, (add that path to `.gitignore`) and point `--credential_helper` to the same path, you can avoid using the shell wrapper but modify the source tree instead.
 - `--@tweag-credential-helper//bzl/config:default_install_destination_windows=<path>`:
@@ -181,10 +181,10 @@ Additionally, you can configure how the installer behaves by adding any of the f
 
 ### <a name="prefix-expansion"></a> Prefix Expansion
 
-Configuration options (including envionment variables and Bazel flags) that refer to paths are subject to prefix expansion. Special prefixes listed below will be replaced by concrete paths at runtime.
+Configuration options (including environment variables and Bazel flags) that refer to paths are subject to prefix expansion. Special prefixes listed below will be replaced by concrete paths at runtime.
 
 - `%workdir%`: the working directory of the agent process:
-  `${XDG_CACHE_HOME}/tweag-credential-helper/<HASH>` (where `$XDG_CACHE_HOME` defaults to `${HOME}/.cache` on Linux and `<HASH>` is the md5 sum of the absolte dirname of the directory containing `MODULE.bazel`).
+  `${XDG_CACHE_HOME}/tweag-credential-helper/<HASH>` (where `$XDG_CACHE_HOME` defaults to `${HOME}/.cache` on Linux and `<HASH>` is the md5 sum of the absolute dirname of the directory containing `MODULE.bazel`).
 - `%workspace%`: the root of the Bazel workspace (absolute dirname of the directory containing `MODULE.bazel`).
 - `%tmp%`: either `$TEST_TMPDIR`, `$TMPDIR`, or `/tmp` in that order of preference.
 - `%cache%`: `$XDG_CACHE_HOME` (which defaults to `${HOME}/.cache` on Linux).
