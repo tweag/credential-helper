@@ -5,3 +5,4 @@ MODULE.bazel.lock
 .vscode
 .env
 tools/credential-helper.exe
+.bazelrc.user
