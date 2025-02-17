@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "integration_test",
+    srcs = [
+        "framework_test.go",
+        "oci_test.go",
+    ],
+    data = ["//:tweag-credential-helper"],
+    env = {"CREDENTIAL_HELPER_LOGGING": "debug"},
+    deps = [
+        "//api",
+        "@rules_go//go/runfiles",
+    ],
+)
