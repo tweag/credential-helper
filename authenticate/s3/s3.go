@@ -97,6 +97,11 @@ func (s *S3Resolver) Get(ctx context.Context, req api.GetCredentialsRequest) (ap
 		return api.GetCredentialsResponse{}, err
 	}
 
+	if parsedURL.Query().Has("X-Amz-Expires") {
+		// This is a presigned URL, no need to sign it again.
+		return api.GetCredentialsResponse{}, nil
+	}
+
 	if parsedURL.Scheme != "https" {
 		return api.GetCredentialsResponse{}, errors.New("only https is supported")
 	}

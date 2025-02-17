@@ -31,7 +31,7 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		return &authenticateGitHub.GitHub{}, nil
 	case strings.EqualFold(u.Host, "ghcr.io"):
 		return authenticateGitHub.GitHubContainerRegistry(), nil
-	case strings.HasSuffix(strings.ToLower(u.Host), ".r2.cloudflarestorage.com"):
+	case strings.HasSuffix(strings.ToLower(u.Host), ".r2.cloudflarestorage.com") && !u.Query().Has("X-Amz-Expires"):
 		return &authenticateS3.R2{}, nil
 	// container registries using the default OCI resolver
 	case strings.EqualFold(u.Host, "index.docker.io"):
