@@ -1,0 +1,22 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "string",
+    srcs = ["helperstring.go"],
+    importpath = "github.com/tweag/credential-helper/helperfactory/string",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "//authenticate/gcs",
+        "//authenticate/github",
+        "//authenticate/null",
+        "//authenticate/oci",
+        "//authenticate/s3",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

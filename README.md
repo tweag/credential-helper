@@ -115,7 +115,7 @@ common:unix --credential_helper=raw.githubusercontent.com=%workspace%/tools/cred
 common:windows --credential_helper=github.com=%workspace%/tools/credential-helper.exe
 common:windows --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper.exe
 
-# Google Cloud Storage / GCS (Unix) 
+# Google Cloud Storage / GCS (Unix)
 common:unix --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
 # Google Cloud Storage / GCS (Windows)
 common:windows --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper.exe
@@ -147,7 +147,50 @@ You can also look at the [example project](/examples/full/) to see how everythin
 
 ## Configuration
 
-You can use environment variables to configure the helper.
+The credential helper has sensible defaults out of the box. If needed, you can use environment variables or a configuration file to change settings.
+
+## Config file
+
+By default, the configuration file is located in the workspace directory (the directory where your MODULE.bazel is located or your current working directory) and is named `.tweag-credential-helper.json`.
+You can override the config file location using the `$CREDENTIAL_HELPER_CONFIG_FILE` environment variable.
+
+- `.urls`: list of configurations to apply to different patterns of urls. Each element contains `scheme`, `host`, and `path` as a way to decide if the entry matches the requested url.
+- `.urls[].scheme`: Scheme of the url. Matches any scheme when empty and checks for equality otherwise.
+- `.urls[].host`: Host of the url. Matches any host when empty and uses globbing otherwise (a `*` matches any characters).
+- `.urls[].path`: Path of the url. Matches any path when empty and uses globbing otherwise (a `*` matches any characters).
+- `.urls[].helper`: Helper to use for this url. Can be one of `s3`, `gcs`, `github`, `oci` or `null`.
+
+### Example
+
+`.tweag-credential-helper.json`:
+```
+{
+  "urls": [
+    {
+      "scheme": "https",
+      "host": "github.com",
+      "path": "/tweag/*",
+      "helper": "github"
+    },
+    {
+      "scheme": "https",
+      "host": "files.acme.corp",
+      "path": "*.tar.gz"
+      "helper": "s3"
+    },
+    {
+      "host": "*.oci.acme.corp",
+      "helper": "oci"
+    }
+  ]
+}
+```
+
+In this example requests to any path below `https://github.com/tweag/` would use the GitHub helper, any requests to `https://files.acme.corp` that end in `.tar.gz` would use the S3 helper, while any requests to a subdomain of `oci.acme.corp` would use the oci helper.
+
+## Environment variables
+
+You can also use environment variables to configure the helper.
 This works by either changing the environment Bazel is started with or by adding the values to the shell stub (that is only available on Linux and macOS).
 
 The following options exist:
@@ -168,6 +211,8 @@ The following options exist:
   Duration between cache prunes in [Go duration format][go_duration]. Defaults to 1m. A negative value disables cache pruning.
 - `$CREDENTIAL_HELPER_GUESS_OCI_REGISTRY`:
   If set to 1, the credential helper will allow any uri that looks like a container registry to obtain authentication tokens from the docker `config.json`. If turned off, only a well-known subset of registries is supported.
+- `$CREDENTIAL_HELPER_CONFIG_FILE`:
+  Path of the optional configuration file. Subject to [prefix expansion](#prefix-expansion). If not set, the helper will use the default path `%workspace%/.tweag-credential-helper.json`.
 
 Additionally, you can configure how the installer behaves by adding any of the following settings to your `.bazelrc`:
 
@@ -214,33 +259,33 @@ Configuration options (including environment variables and Bazel flags) that ref
 
 We invite external contributions and are eager to work together with the build systems community.
 Please refer to the [CONTRIBUTING](/docs/CONTRIBUTING.md) guide to learn more.
-If you want to check out the code and run a development version, follow the [HACKING](/docs/HACKING.md) guide to get started. 
+If you want to check out the code and run a development version, follow the [HACKING](/docs/HACKING.md) guide to get started.
 
-## Security Considerations  
+## Security Considerations
 
-In most circumstances, a credential helper improves security by decoupling resource configuration from the credentials required to access them. This reduces the need for hardcoded credentials stored in source code, minimizing potential security vulnerabilities.  
+In most circumstances, a credential helper improves security by decoupling resource configuration from the credentials required to access them. This reduces the need for hardcoded credentials stored in source code, minimizing potential security vulnerabilities.
 
-### Credential Handling  
+### Credential Handling
 
-The credential helper spawns two processes:  
+The credential helper spawns two processes:
 
-1. **A short-lived client process** that communicates with the caller via standard input and output.  
-2. **An agent process** that caches credentials and implements a JSON-RPC protocol via Unix domain sockets.  
+1. **A short-lived client process** that communicates with the caller via standard input and output.
+2. **An agent process** that caches credentials and implements a JSON-RPC protocol via Unix domain sockets.
 
-Credentials are cached only in memory (never written to disk). The client process exists only for the duration of a single request (e.g., obtaining credentials for a specific URI). Meanwhile, the agent process runs in the background and idles for up to three hours before automatically shutting down.  
+Credentials are cached only in memory (never written to disk). The client process exists only for the duration of a single request (e.g., obtaining credentials for a specific URI). Meanwhile, the agent process runs in the background and idles for up to three hours before automatically shutting down.
 
-The agent evicts expired credentials from the cache once per minute but does not guarantee the secure scrubbing of memory. As a result, while expired credentials are no longer accessible through the agent socket, they may still reside in physical memory for some time before being reclaimed by garbage collection or the operating system.  
+The agent evicts expired credentials from the cache once per minute but does not guarantee the secure scrubbing of memory. As a result, while expired credentials are no longer accessible through the agent socket, they may still reside in physical memory for some time before being reclaimed by garbage collection or the operating system.
 
-### Attack Surface  
+### Attack Surface
 
-Both processes run with the same privileges as the user who starts Bazel (or similar tools). Any credentials derived by the helper are also accessible to that user through environment variables, configuration files, the system keyring, or similar sources.  
+Both processes run with the same privileges as the user who starts Bazel (or similar tools). Any credentials derived by the helper are also accessible to that user through environment variables, configuration files, the system keyring, or similar sources.
 
-Any information retrievable by the user running the helper process does not constitute a disclosure of sensitive information. Instead, this section focuses on the attack surface exposed to other users on the same system.  
+Any information retrievable by the user running the helper process does not constitute a disclosure of sensitive information. Instead, this section focuses on the attack surface exposed to other users on the same system.
 
-#### JSON-RPC via Unix Domain Socket  
+#### JSON-RPC via Unix Domain Socket
 
-The caching agent implements a simple RPC protocol that is accessible via a socket.  
-The socket’s access permissions are configured to restrict connections only to the user running the agent. This is enforced by setting a `umask` on the agent process before creating the socket.  
+The caching agent implements a simple RPC protocol that is accessible via a socket.
+The socket’s access permissions are configured to restrict connections only to the user running the agent. This is enforced by setting a `umask` on the agent process before creating the socket.
 
 The agent does not implement additional countermeasures. Consequently, access to the socket provides full read and write permissions for cached credentials.
 
