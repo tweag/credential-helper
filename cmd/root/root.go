@@ -16,6 +16,7 @@ import (
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/cache"
 	"github.com/tweag/credential-helper/cmd/installer"
+	"github.com/tweag/credential-helper/config"
 	"github.com/tweag/credential-helper/logging"
 )
 
@@ -61,12 +62,21 @@ func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewC
 
 // foreground immediately responds to the get command and exits.
 // If possible, it sends the response to the agent for caching.
-func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.Cache) {
+func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.Cache, configReader config.ConfigReader) {
 	req := api.GetCredentialsRequest{}
 
 	err := json.NewDecoder(os.Stdin).Decode(&req)
 	if err != nil {
 		logging.Fatalf("%v", err)
+	}
+
+	cfg, err := configReader.Read()
+	if err == nil {
+		helperFactory = func(uri string) (api.Helper, error) {
+			return cfg.FindHelper(uri)
+		}
+	} else if err != config.ErrConfigNotFound {
+		logging.Fatalf("reading config: %v", err)
 	}
 
 	authenticator, err := helperFactory(req.URI)
@@ -154,7 +164,7 @@ func clientProcess(ctx context.Context, helperFactory api.HelperFactory) {
 	}
 	defer cleanup()
 
-	foreground(ctx, helperFactory, cache)
+	foreground(ctx, helperFactory, cache, config.OSReader{})
 }
 
 func clientCommandProcess(command string, r io.Reader) {

@@ -21,8 +21,10 @@ release_files = [
     "//cmd/credential-helper:all_files",
     "//cmd/installer:all_files",
     "//cmd/root:all_files",
+    "//config:all_files",
     "//helperfactory:all_files",
     "//helperfactory/fallback:all_files",
+    "//helperfactory/string:all_files",
     "//installer:all_files",
     "//logging:all_files",
 ]

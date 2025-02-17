@@ -1,18 +1,15 @@
 load("@rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "root",
-    srcs = ["root.go"],
-    importpath = "github.com/tweag/credential-helper/cmd/root",
+    name = "config",
+    srcs = ["config.go"],
+    importpath = "github.com/tweag/credential-helper/config",
     visibility = ["//visibility:public"],
     deps = [
-        "//agent",
         "//agent/locate",
         "//api",
-        "//cache",
-        "//cmd/installer",
-        "//config",
-        "//logging",
+        "//authenticate/null",
+        "//helperfactory/string",
     ],
 )
 
