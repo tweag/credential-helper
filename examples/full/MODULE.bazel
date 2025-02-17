@@ -12,7 +12,7 @@ local_path_override(
     path = "../..",
 )
 
-bazel_dep(name = "rules_oci", version = "2.2.0")
+bazel_dep(name = "rules_oci", version = "2.2.2")
 single_version_override(
     module_name = "rules_oci",
     patch_strip = 1,
