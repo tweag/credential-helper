@@ -68,4 +68,4 @@ oci.pull(
     image = "hello-world",
     platforms = ["linux/amd64"],
 )
-use_repo(oci, "docker_hub_hello_world_linux_amd64", "ghcr_oci")
+use_repo(oci, "docker_hub_hello_world", "docker_hub_hello_world_linux_amd64", "ghcr_oci")
