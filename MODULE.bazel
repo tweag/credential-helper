@@ -16,6 +16,7 @@ use_repo(
     "com_github_aws_aws_sdk_go_v2",
     "com_github_aws_aws_sdk_go_v2_config",
     "com_github_aws_aws_sdk_go_v2_credentials",
+    "com_github_bazelbuild_rules_go",
     "com_github_stretchr_testify",
     "com_github_zalando_go_keyring",
     "io_k8s_sigs_yaml",
