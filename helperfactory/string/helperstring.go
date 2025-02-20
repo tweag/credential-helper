@@ -7,6 +7,7 @@ import (
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
 	authenticateOCI "github.com/tweag/credential-helper/authenticate/oci"
+	authenticateRemoteAPIs "github.com/tweag/credential-helper/authenticate/remoteapis"
 	authenticateS3 "github.com/tweag/credential-helper/authenticate/s3"
 )
 
@@ -20,6 +21,8 @@ func HelperFromString(s string) api.Helper {
 		return &authenticateGitHub.GitHub{}
 	case "oci":
 		return authenticateOCI.NewFallbackOCI()
+	case "remoteapis":
+		return &authenticateRemoteAPIs.RemoteAPIs{}
 	case "null":
 		return &authenticateNull.Null{}
 	}
