@@ -11,6 +11,7 @@ import (
 	"github.com/tweag/credential-helper/agent/locate"
 	"github.com/tweag/credential-helper/api"
 	helperstringfactory "github.com/tweag/credential-helper/helperfactory/string"
+	"github.com/tweag/credential-helper/logging"
 )
 
 var ErrConfigNotFound = errors.New("config file not found")
@@ -54,6 +55,7 @@ func (c Config) FindHelper(uri string) (api.Helper, []byte, error) {
 		}
 		helper := helperstringfactory.HelperFromString(urlConfig.Helper)
 		if helper != nil {
+			logging.Debugf("selected helper %s from config", urlConfig.Helper)
 			return helper, urlConfig.Config, nil
 		}
 		return nil, nil, fmt.Errorf("unknown helper: %s", urlConfig.Helper)
