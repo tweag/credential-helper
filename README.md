@@ -159,6 +159,7 @@ You can override the config file location using the `$CREDENTIAL_HELPER_CONFIG_F
 - `.urls[].host`: Host of the url. Matches any host when empty and uses globbing otherwise (a `*` matches any characters).
 - `.urls[].path`: Path of the url. Matches any path when empty and uses globbing otherwise (a `*` matches any characters).
 - `.urls[].helper`: Helper to use for this url. Can be one of `s3`, `gcs`, `github`, `oci` or `null`.
+- `.urls[].config`: Optional helper-specific configuration. Refer to the documentation of the chosen helper for more information.
 
 ### Example
 

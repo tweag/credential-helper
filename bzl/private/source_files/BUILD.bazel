@@ -7,6 +7,8 @@ release_files = [
     "//api:all_files",
     "//authenticate/gcs:all_files",
     "//authenticate/github:all_files",
+    "//authenticate/internal:all_files",
+    "//authenticate/internal/helperconfig:all_files",
     "//authenticate/null:all_files",
     "//authenticate/oci:all_files",
     "//authenticate/s3:all_files",

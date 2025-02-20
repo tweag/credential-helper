@@ -6,3 +6,4 @@ MODULE.bazel.lock
 .env
 tools/credential-helper.exe
 .bazelrc.user
+.tweag-credential-helper.json
