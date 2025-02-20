@@ -75,7 +75,9 @@ func (r OSReader) Read() (Config, error) {
 	defer file.Close()
 
 	var config Config
-	err = json.NewDecoder(file).Decode(&config)
+	decoder := json.NewDecoder(file)
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&config)
 	if err != nil {
 		return Config{}, err
 	}
