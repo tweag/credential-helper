@@ -10,51 +10,57 @@ import (
 
 	"github.com/tweag/credential-helper/agent/locate"
 	"github.com/tweag/credential-helper/api"
-	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
 	helperstringfactory "github.com/tweag/credential-helper/helperfactory/string"
 )
 
 var ErrConfigNotFound = errors.New("config file not found")
 
 type URLConfig struct {
-	Scheme string `json:"scheme,omitempty"`
-	Host   string `json:"host,omitempty"`
-	Path   string `json:"path,omitempty"`
-	Helper string `json:"helper"`
+	Scheme string          `json:"scheme,omitempty"`
+	Host   string          `json:"host,omitempty"`
+	Path   string          `json:"path,omitempty"`
+	Helper string          `json:"helper"`
+	Config json.RawMessage `json:"config,omitempty"` // the schema of this field is defined by the helper
 }
 
 type Config struct {
 	URLs []URLConfig `json:"urls,omitempty"`
 }
 
-func (c Config) FindHelper(uri string) (api.Helper, error) {
+func (c Config) FindHelper(uri string) (api.Helper, []byte, error) {
 	requested, err := url.Parse(uri)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if len(c.URLs) == 0 {
-		return nil, errors.New("invalid configuration file: no helpers configured")
+		return nil, nil, errors.New("invalid configuration file: no helpers configured")
 	}
-	for _, url := range c.URLs {
+	for _, urlConfig := range c.URLs {
+		if len(urlConfig.Helper) == 0 {
+			return nil, nil, errors.New("invalid configuration file: helper field is required")
+		}
+
 		// if a scheme is specified, it must match
-		if len(url.Scheme) > 0 && url.Scheme != requested.Scheme {
+		if len(urlConfig.Scheme) > 0 && urlConfig.Scheme != requested.Scheme {
 			continue
 		}
 		// if a host is specified, it must glob match
-		if len(url.Host) > 0 && !globMatch(url.Host, requested.Host) {
+		if len(urlConfig.Host) > 0 && !globMatch(urlConfig.Host, requested.Host) {
 			continue
 		}
 		// if a path is specified, it must glob match
-		if len(url.Path) > 0 && !globMatch(url.Path, requested.Path) {
+		if len(urlConfig.Path) > 0 && !globMatch(urlConfig.Path, requested.Path) {
 			continue
 		}
-		helper := helperstringfactory.HelperFromString(url.Helper)
+		helper := helperstringfactory.HelperFromString(urlConfig.Helper)
 		if helper != nil {
-			return helper, nil
+			return helper, urlConfig.Config, nil
 		}
-		return nil, fmt.Errorf("unknown helper: %s", url.Helper)
+		return nil, nil, fmt.Errorf("unknown helper: %s", urlConfig.Helper)
 	}
-	return &authenticateNull.Null{}, nil
+	// this is equivalent to null.Null{}
+	// but avoids the import of the null package
+	return helperstringfactory.HelperFromString("null"), nil, nil
 }
 
 type ConfigReader interface {

@@ -73,7 +73,14 @@ func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.
 	cfg, err := configReader.Read()
 	if err == nil {
 		helperFactory = func(uri string) (api.Helper, error) {
-			return cfg.FindHelper(uri)
+			helper, helperConfig, err := cfg.FindHelper(uri)
+			if err != nil {
+				return nil, err
+			}
+			if len(helperConfig) > 0 {
+				ctx = context.WithValue(ctx, api.HelperConfigKey, helperConfig)
+			}
+			return helper, nil
 		}
 	} else if err != config.ErrConfigNotFound {
 		logging.Fatalf("reading config: %v", err)
