@@ -12,6 +12,7 @@ release_files = [
     "//authenticate/internal/lookupchain:all_files",
     "//authenticate/null:all_files",
     "//authenticate/oci:all_files",
+    "//authenticate/remoteapis:all_files",
     "//authenticate/s3:all_files",
     "//bzl:all_files",
     "//bzl/config:all_files",

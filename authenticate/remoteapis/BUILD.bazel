@@ -1,14 +1,14 @@
 load("@rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "config",
-    srcs = ["config.go"],
-    importpath = "github.com/tweag/credential-helper/config",
+    name = "remoteapis",
+    srcs = ["remoteapis.go"],
+    importpath = "github.com/tweag/credential-helper/authenticate/remoteapis",
     visibility = ["//visibility:public"],
     deps = [
-        "//agent/locate",
         "//api",
-        "//helperfactory/string",
+        "//authenticate/internal/helperconfig",
+        "//authenticate/internal/lookupchain",
         "//logging",
     ],
 )
