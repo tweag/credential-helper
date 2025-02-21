@@ -70,10 +70,29 @@ func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.
 		logging.Fatalf("%v", err)
 	}
 
+	logging.Debugf("writing request to log at %s", filepath.Join(locate.Run(), "log"))
+	log, err := os.OpenFile(filepath.Join(locate.Run(), "log"), os.O_WRONLY|os.O_CREATE|os.O_APPEND, os.ModePerm)
+	// log, err := os.Create(filepath.Join(locate.Run(), "log"))
+	if err != nil {
+		logging.Fatalf("opening log file: %v", err)
+	}
+	defer log.Close()
+	if _, err := log.WriteString(fmt.Sprintf("%v\n", req.URI)); err != nil {
+		logging.Fatalf("writing request to log: %v", err)
+	}
+
 	cfg, err := configReader.Read()
 	if err == nil {
+		logging.Debugf("found config file and choosing helper from it")
 		helperFactory = func(uri string) (api.Helper, error) {
-			return cfg.FindHelper(uri)
+			helper, helperConfig, err := cfg.FindHelper(uri)
+			if err != nil {
+				return nil, err
+			}
+			if len(helperConfig) > 0 {
+				ctx = context.WithValue(ctx, api.HelperConfigKey, helperConfig)
+			}
+			return helper, nil
 		}
 	} else if err != config.ErrConfigNotFound {
 		logging.Fatalf("reading config: %v", err)

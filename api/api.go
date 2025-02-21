@@ -101,6 +101,11 @@ const (
 	PlaceholderHomedir      = "~"
 )
 
+// HelperConfigKey is the key used to store the helper configuration in the context (context.Context) as []byte.
+// The encoding is expected to be json.
+// The schema of the configuration is defined by the helper.
+const HelperConfigKey = "helper-config"
+
 // HelperFactory chooses a credential helper (like s3, gcs, github, ...) based on the raw uri.
 type HelperFactory func(string) (Helper, error)
 
