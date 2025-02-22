@@ -8,8 +8,8 @@ go_library(
     deps = [
         "//agent/locate",
         "//api",
-        "//helperfactory/string",
         "//logging",
+        "//registry",
     ],
 )
 

@@ -1,9 +1,9 @@
 load("@rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "string",
-    srcs = ["helperstring.go"],
-    importpath = "github.com/tweag/credential-helper/helperfactory/string",
+    name = "registry",
+    srcs = ["registry.go"],
+    importpath = "github.com/tweag/credential-helper/registry",
     visibility = ["//visibility:public"],
     deps = [
         "//api",

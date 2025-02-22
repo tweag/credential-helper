@@ -28,9 +28,9 @@ release_files = [
     "//config:all_files",
     "//helperfactory:all_files",
     "//helperfactory/fallback:all_files",
-    "//helperfactory/string:all_files",
     "//installer:all_files",
     "//logging:all_files",
+    "//registry:all_files",
 ]
 
 dev_files = [
