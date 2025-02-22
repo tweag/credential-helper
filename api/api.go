@@ -74,7 +74,7 @@ type Cache interface {
 
 // URISetupper is an optional interface that can be implemented by helpers to perform setup for a given URI.
 type URISetupper interface {
-	SetupInstructionsForURI(uri string) string
+	SetupInstructionsForURI(ctx context.Context, uri string) string
 }
 
 var CacheMiss = errors.New("cache miss")

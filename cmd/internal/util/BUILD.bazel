@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "util",
+    srcs = ["util.go"],
+    importpath = "github.com/tweag/credential-helper/cmd/internal/util",
+    visibility = ["//cmd:__subpackages__"],
+    deps = [
+        "//api",
+        "//config",
+        "//logging",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

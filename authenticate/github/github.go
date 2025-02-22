@@ -30,6 +30,35 @@ func (g *GitHub) Resolver(ctx context.Context) (api.Resolver, error) {
 	return &GitHubResolver{tokenSource: source}, nil
 }
 
+func (g *GitHub) SetupInstructionsForURI(ctx context.Context, uri string) string {
+	return fmt.Sprintf(`%s is a GitHub url.
+
+The credential helper can be used to download any assets GitHub hosts, including:
+
+  - the git protocol via https
+  - raw code files (raw.githubusercontent.com/<org>/<repo>/<commit>/<file>)
+  - patches (github.com/<org>/<repo>/<commit>.patch)
+  - source tarballs (github.com/<org>/<repo>/archive/refs/tags/v1.2.3.tar.gz)
+  - release assets (github.com/<org>/<repo>/releases/download/v1.2.3/<file>)
+  - container images from ghcr.io (doc)
+  ... and more.
+
+With credentials, you are also less likely to be blocked by GitHub rate limits, even when accessing public repositories.
+
+Authentication Methods:
+
+  Option 1: Using the GitHub CLI as a regular user (Recommended)
+    1. Install the GitHub CLI (gh): https://github.com/cli/cli#installation
+    2. Login via:
+      $ gh auth login
+    3. Follow the browser prompts to authenticate
+
+  Option 2: Authentication using a GitHub App, GitHub Actions Token or Personal Access Token (PAT)
+    1. Setup your authentication method of choice
+    2. Set the required environment variable (GH_TOKEN or GITHUB_TOKEN) when running Bazel (or other tools that access credential helpers)
+    3. Alternatively, add the secret to the system keyring under the gh:github.com key`, uri)
+}
+
 // CacheKey returns a cache key for the given request.
 // For GitHub, the same token can be used for all requests.
 func (g *GitHub) CacheKey(req api.GetCredentialsRequest) string {
