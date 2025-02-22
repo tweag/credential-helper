@@ -10,8 +10,8 @@ import (
 
 	"github.com/tweag/credential-helper/agent/locate"
 	"github.com/tweag/credential-helper/api"
-	helperstringfactory "github.com/tweag/credential-helper/helperfactory/string"
 	"github.com/tweag/credential-helper/logging"
+	"github.com/tweag/credential-helper/registry"
 )
 
 var ErrConfigNotFound = errors.New("config file not found")
@@ -53,7 +53,7 @@ func (c Config) FindHelper(uri string) (api.Helper, []byte, error) {
 		if len(urlConfig.Path) > 0 && !globMatch(urlConfig.Path, requested.Path) {
 			continue
 		}
-		helper := helperstringfactory.HelperFromString(urlConfig.Helper)
+		helper := registry.HelperFromString(urlConfig.Helper)
 		if helper != nil {
 			logging.Debugf("selected helper %s from config", urlConfig.Helper)
 			return helper, urlConfig.Config, nil
@@ -62,7 +62,7 @@ func (c Config) FindHelper(uri string) (api.Helper, []byte, error) {
 	}
 	// this is equivalent to null.Null{}
 	// but avoids the import of the null package
-	return helperstringfactory.HelperFromString("null"), nil, nil
+	return registry.HelperFromString("null"), nil, nil
 }
 
 type ConfigReader interface {

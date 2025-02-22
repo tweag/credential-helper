@@ -9,7 +9,15 @@ import (
 	"time"
 
 	"github.com/tweag/credential-helper/api"
+	"github.com/tweag/credential-helper/registry"
 )
+
+func init() {
+	// This code runs when the program starts.
+	// It registers this helper with the registry under the name `pathtoheader`.
+	// The registry is used by the agent to look up helpers by name.
+	registry.Register("pathtoheader", PathToHeader{})
+}
 
 // PathToHeader is a credential helper that
 // takes a request path and returns

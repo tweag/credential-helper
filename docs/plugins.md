@@ -27,6 +27,17 @@ You can find the built-in default implementations under [/authenticate][authenti
 
 The credential helper supports multiple authentication providers in a single helper binary. The factory function determines which `api.Helper` to use based on the request URI. You can find the default implementation in [github.com/tweag/credential-helper/helperfactory/fallback.FallbackHelperFactory][fallback-helper-factory].
 
+## Registering your helper
+
+Custom helpers need to be registered at program startup to work and be recognized correctly. For this, the `registry.Register` function can be called to add a globally known register (with a unique name) to the registry.
+Simply add an `init` function to the package that implements `api.Helper`:
+
+```go
+func init() {
+	registry.Register("foo", FooHelper{})
+}
+```
+
 ## (Optional) Replace the default in-memory cache
 
 By default, the agent process uses a simple in-memory key-value store to cache credentials. You can provide a custom implementation to persist credentials (on disk, in a database, in a shared key-value store, using a (hardware backed) secure storage, etc.), implement more selective caching (decide what to keep), or perform other custom logic.
