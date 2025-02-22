@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "lookupchain",
+    srcs = ["lookupchain.go"],
+    importpath = "github.com/tweag/credential-helper/authenticate/internal/lookupchain",
+    visibility = ["//authenticate:__subpackages__"],
+    deps = ["@com_github_zalando_go_keyring//:go-keyring"],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)
