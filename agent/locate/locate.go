@@ -17,6 +17,14 @@ import (
 // environment variables to ensure
 // a consistent working environment.
 func SetupEnvironment() error {
+	originalWorkingDirectory, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	if err := os.Setenv(api.OriginalWorkingDirectoryEnv, originalWorkingDirectory); err != nil {
+		return err
+	}
+
 	workspacePath, err := setupWorkspaceDirectory()
 	if err != nil {
 		return err
@@ -109,6 +117,14 @@ func AgentPaths() (string, string) {
 	pidPath := LookupPathEnv(api.AgentPidPath, filepath.Join("%workdir%", "run", "agent.pid"), false)
 
 	return socketPath, pidPath
+}
+
+func RemapToOriginalWorkingDirectory(p string) string {
+	if filepath.IsAbs(p) {
+		return p
+	}
+	prefix := os.Getenv(api.OriginalWorkingDirectoryEnv)
+	return filepath.Join(prefix, p)
 }
 
 func tmpDir() string {

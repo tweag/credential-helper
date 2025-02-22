@@ -72,6 +72,11 @@ type Cache interface {
 	Prune(context.Context) error
 }
 
+// URISetupper is an optional interface that can be implemented by helpers to perform setup for a given URI.
+type URISetupper interface {
+	SetupInstructionsForURI(uri string) string
+}
+
 var CacheMiss = errors.New("cache miss")
 
 // Environment variable names used by the credential helper.
@@ -90,6 +95,9 @@ const (
 	WorkdirEnv = "CREDENTIAL_HELPER_WORKDIR"
 	// The working directory of Bazel (path containing root module).
 	WorkspaceEnv = "CREDENTIAL_HELPER_WORKSPACE_DIRECTORY"
+	// The cwd of the helper process before it is chdir'd into the workdir.
+	// This is used to resolve relative paths for some CLI commands.
+	OriginalWorkingDirectoryEnv = "CREDENTIAL_HELPER_ORIGINAL_WORKING_DIRECTORY"
 )
 
 // Placeholders in configuration that is expanded automatically.
