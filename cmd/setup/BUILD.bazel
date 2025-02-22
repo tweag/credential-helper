@@ -2,11 +2,18 @@ load("@rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "setup",
-    srcs = ["keyring.go"],
+    srcs = [
+        "keyring.go",
+        "uri.go",
+    ],
     importpath = "github.com/tweag/credential-helper/cmd/setup",
     visibility = ["//visibility:public"],
     deps = [
         "//agent/locate",
+        "//api",
+        "//cmd/internal/util",
+        "//config",
+        "//logging",
         "@com_github_zalando_go_keyring//:go-keyring",
     ],
 )

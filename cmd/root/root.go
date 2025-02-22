@@ -16,6 +16,7 @@ import (
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/cache"
 	"github.com/tweag/credential-helper/cmd/installer"
+	"github.com/tweag/credential-helper/cmd/internal/util"
 	"github.com/tweag/credential-helper/cmd/setup"
 	"github.com/tweag/credential-helper/config"
 	"github.com/tweag/credential-helper/logging"
@@ -25,6 +26,7 @@ const usage = `Usage: credential-helper [COMMAND] [ARGS...]
 
 Commands:
   get            get credentials in the form of http headers for the uri provided on stdin and print result to stdout (see https://github.com/EngFlow/credential-helper-spec for more information)
+  setup-uri      prints setup instructions for a given uri
   setup-keyring  stores a secret in the system keyring`
 
 func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewCache, args []string) {
@@ -44,6 +46,8 @@ func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewC
 	switch command {
 	case "get":
 		clientProcess(ctx, helperFactory)
+	case "setup-uri":
+		setup.URIProcess(args[2:], helperFactory, config.OSReader{})
 	case "setup-keyring":
 		setup.KeyringProcess(args[2:])
 	case "agent-launch":
@@ -68,7 +72,7 @@ func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewC
 
 // foreground immediately responds to the get command and exits.
 // If possible, it sends the response to the agent for caching.
-func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.Cache, configReader config.ConfigReader) {
+func foreground(ctx context.Context, cache api.Cache, helperFactory api.HelperFactory, configReader config.ConfigReader) {
 	req := api.GetCredentialsRequest{}
 
 	err := json.NewDecoder(os.Stdin).Decode(&req)
@@ -76,27 +80,7 @@ func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.
 		logging.Fatalf("%v", err)
 	}
 
-	cfg, err := configReader.Read()
-	if err == nil {
-		logging.Debugf("found config file and choosing helper from it")
-		helperFactory = func(uri string) (api.Helper, error) {
-			helper, helperConfig, err := cfg.FindHelper(uri)
-			if err != nil {
-				return nil, err
-			}
-			if len(helperConfig) > 0 {
-				ctx = context.WithValue(ctx, api.HelperConfigKey, helperConfig)
-			}
-			return helper, nil
-		}
-	} else if err != config.ErrConfigNotFound {
-		logging.Fatalf("reading config: %v", err)
-	}
-
-	authenticator, err := helperFactory(req.URI)
-	if err != nil {
-		logging.Fatalf("%v", err)
-	}
+	ctx, authenticator := util.Configure(ctx, helperFactory, configReader, req.URI)
 
 	cacheKey := authenticator.CacheKey(req)
 	if len(cacheKey) == 0 {
@@ -126,7 +110,13 @@ func foreground(ctx context.Context, helperFactory api.HelperFactory, cache api.
 
 	resp, err = resolver.Get(ctx, req)
 	if err != nil {
-		logging.Fatalf("%s", err)
+		var extraMessage string
+		_, canSetupViaAuthenticator := authenticator.(api.URISetupper)
+		_, canSetupViaResolver := resolver.(api.URISetupper)
+		if canSetupViaAuthenticator || canSetupViaResolver {
+			extraMessage = fmt.Sprintf("\n\nTip: try running the following command for setup instructions:\n  $ %s setup-uri %s", os.Args[0], req.URI)
+		}
+		logging.Fatalf("%s%s", err, extraMessage)
 	}
 
 	err = json.NewEncoder(os.Stdout).Encode(resp)
@@ -178,7 +168,7 @@ func clientProcess(ctx context.Context, helperFactory api.HelperFactory) {
 	}
 	defer cleanup()
 
-	foreground(ctx, helperFactory, cache, config.OSReader{})
+	foreground(ctx, cache, helperFactory, config.OSReader{})
 }
 
 func clientCommandProcess(command string, r io.Reader) {
