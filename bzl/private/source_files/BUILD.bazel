@@ -1,9 +1,9 @@
 release_files = [
     "//:all_files",
     "//agent:all_files",
-    "//agent/locate:all_files",
     "//agent/internal:all_files",
     "//agent/internal/lockfile:all_files",
+    "//agent/locate:all_files",
     "//api:all_files",
     "//authenticate/gcs:all_files",
     "//authenticate/github:all_files",
