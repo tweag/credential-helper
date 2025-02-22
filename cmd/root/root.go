@@ -16,12 +16,16 @@ import (
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/cache"
 	"github.com/tweag/credential-helper/cmd/installer"
+	"github.com/tweag/credential-helper/cmd/setup"
 	"github.com/tweag/credential-helper/config"
 	"github.com/tweag/credential-helper/logging"
 )
 
-const usage = `Usage:
-  credential-helper get`
+const usage = `Usage: credential-helper [COMMAND] [ARGS...]
+
+Commands:
+  get            get credentials in the form of http headers for the uri provided on stdin and print result to stdout (see https://github.com/EngFlow/credential-helper-spec for more information)
+  setup-keyring  stores a secret in the system keyring`
 
 func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewCache, args []string) {
 	setLogLevel()
@@ -40,6 +44,8 @@ func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewC
 	switch command {
 	case "get":
 		clientProcess(ctx, helperFactory)
+	case "setup-keyring":
+		setup.KeyringProcess(args[2:])
 	case "agent-launch":
 		agentProcess(ctx, newCache)
 	case "agent-shutdown":

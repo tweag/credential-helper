@@ -11,6 +11,7 @@ go_library(
         "//api",
         "//cache",
         "//cmd/installer",
+        "//cmd/setup",
         "//config",
         "//logging",
     ],

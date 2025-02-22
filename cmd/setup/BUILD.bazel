@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "setup",
+    srcs = ["keyring.go"],
+    importpath = "github.com/tweag/credential-helper/cmd/setup",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//agent/locate",
+        "@com_github_zalando_go_keyring//:go-keyring",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)
