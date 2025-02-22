@@ -34,6 +34,27 @@ func (g *RemoteAPIs) CacheKey(req api.GetCredentialsRequest) string {
 	return req.URI
 }
 
+func (g *RemoteAPIs) SetupInstructionsForURI(ctx context.Context, uri string) string {
+	var lookupChainInstructions string
+	cfg, err := configFromContext(ctx)
+	if err == nil {
+		chain := lookupchain.New(cfg.LookupChain)
+		lookupChainInstructions = chain.SetupInstructions("default", "secret sent to remote APIs as an authentication token or basic auth credentials")
+	} else {
+		lookupChainInstructions = fmt.Sprintf("due to a configuration parsing issue, no further setup instructions are available: %v", err)
+	}
+
+	var rbeSystemInstructions string
+	switch {
+	case strings.HasPrefix(uri, "https://remote.buildbuddy.io/"):
+		rbeSystemInstructions = `For BuildBuddy, visit https://app.buildbuddy.io/docs/setup/ and copy the secret after "x-buildbuddy-api-key=". Use the header_name "x-buildbuddy-api-key" in the configuration.`
+	default:
+		rbeSystemInstructions = "Cannot infer RBE provider based on uri. Skipping provider-specific setup instructions."
+	}
+
+	return fmt.Sprintf("%s refers to a remote build execution (RBE) system (a gRPC endpoint used for remote execution, remote caching, or related purposes).\n%s\n\n%s", uri, rbeSystemInstructions, lookupChainInstructions)
+}
+
 func (RemoteAPIs) Resolver(ctx context.Context) (api.Resolver, error) {
 	return &RemoteAPIs{}, nil
 }
@@ -42,21 +63,7 @@ func (RemoteAPIs) Resolver(ctx context.Context) (api.Resolver, error) {
 //
 // https://github.com/EngFlow/credential-helper-spec/blob/main/spec.md#get
 func (g *RemoteAPIs) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
-	cfg, err := helperconfig.FromContext(ctx, configFragment{
-		AuthMethod: "header",
-		LookupChain: lookupchain.Default([]lookupchain.Source{
-			&lookupchain.Env{
-				Source:  "env",
-				Name:    "CREDENTIAL_HELPER_REMOTEAPIS_SECRET",
-				Binding: "default",
-			},
-			&lookupchain.Keyring{
-				Source:  "keyring",
-				Service: "tweag-credential-helper:remoteapis",
-				Binding: "default",
-			},
-		}),
-	})
+	cfg, err := configFromContext(ctx)
 	if err != nil {
 		return api.GetCredentialsResponse{}, fmt.Errorf("getting configuration fragment for remotapis helper and url %s: %w", req.URI, err)
 	}
@@ -151,4 +158,22 @@ type configFragment struct {
 	// Each element is a string that identifies a secret source.
 	// It defaults to the sources "env", "keyring".
 	LookupChain lookupchain.Config `json:"lookup_chain"`
+}
+
+func configFromContext(ctx context.Context) (configFragment, error) {
+	return helperconfig.FromContext(ctx, configFragment{
+		AuthMethod: "header",
+		LookupChain: lookupchain.Default([]lookupchain.Source{
+			&lookupchain.Env{
+				Source:  "env",
+				Name:    "CREDENTIAL_HELPER_REMOTEAPIS_SECRET",
+				Binding: "default",
+			},
+			&lookupchain.Keyring{
+				Source:  "keyring",
+				Service: "tweag-credential-helper:remoteapis",
+				Binding: "default",
+			},
+		}),
+	})
 }
