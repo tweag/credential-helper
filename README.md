@@ -178,13 +178,19 @@ You can override the config file location using the `$CREDENTIAL_HELPER_CONFIG_F
       "scheme": "https",
       "host": "github.com",
       "path": "/tweag/*",
-      "helper": "github"
+      "helper": "github",
+      "config": {
+        "read_config_file": false
+      }
     },
     {
       "scheme": "https",
       "host": "files.acme.corp",
-      "path": "*.tar.gz"
-      "helper": "s3"
+      "path": "*.tar.gz",
+      "helper": "s3",
+      "config": {
+        "region": "us-east-1"
+      }
     },
     {
       "host": "*.oci.acme.corp",
