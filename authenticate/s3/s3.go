@@ -33,7 +33,7 @@ func (S3) Resolver(ctx context.Context) (api.Resolver, error) {
 	}, nil
 }
 
-func (g *S3) SetupInstructionsForURI(ctx context.Context, uri string) string {
+func (s *S3) SetupInstructionsForURI(ctx context.Context, uri string) string {
 	parsedURL, error := url.Parse(uri)
 	if error != nil {
 		parsedURL = &url.URL{}
@@ -305,21 +305,21 @@ func configFromContext(ctx context.Context, uri *url.URL) (configFragment, error
 	sources := []lookupchain.Source{
 		// acces key id
 		&lookupchain.Keyring{
-			Source:  "env",
+			Source:  "keyring",
 			Service: "tweag-credential-helper:aws-access-key-id",
 			Binding: BindigAccessKeyID,
 		},
 
 		// secret access key
 		&lookupchain.Keyring{
-			Source:  "env",
+			Source:  "keyring",
 			Service: "tweag-credential-helper:aws-secret-access-key",
 			Binding: BindingSecretAccessKey,
 		},
 
 		// default region
 		&lookupchain.Keyring{
-			Source:  "env",
+			Source:  "keyring",
 			Service: "tweag-credential-helper:aws-default-region",
 			Binding: BindingRegion,
 		},
