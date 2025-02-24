@@ -11,6 +11,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//api",
+        "//authenticate/internal/helperconfig",
+        "//authenticate/internal/lookupchain",
         "//logging",
         "@org_golang_x_oauth2//:oauth2",
     ],

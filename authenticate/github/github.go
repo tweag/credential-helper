@@ -15,7 +15,6 @@ import (
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/authenticate/internal/helperconfig"
 	"github.com/tweag/credential-helper/authenticate/internal/lookupchain"
-	"github.com/tweag/credential-helper/authenticate/oci"
 	"github.com/tweag/credential-helper/logging"
 	"golang.org/x/oauth2"
 	"sigs.k8s.io/yaml"
@@ -24,7 +23,7 @@ import (
 type GitHub struct{}
 
 func (g *GitHub) Resolver(ctx context.Context) (api.Resolver, error) {
-	cfg, err := configFromContext(ctx, tokenPurposeAPI)
+	cfg, err := configFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +32,7 @@ func (g *GitHub) Resolver(ctx context.Context) (api.Resolver, error) {
 
 func (g *GitHub) SetupInstructionsForURI(ctx context.Context, uri string) string {
 	var lookupChainInstructions string
-	cfg, err := configFromContext(ctx, tokenPurposeAPI)
+	cfg, err := configFromContext(ctx)
 	if err == nil {
 		chain := lookupchain.New(cfg.LookupChain)
 		lookupChainInstructions = chain.SetupInstructions("default", "secret sent to GitHub as a bearer token in the Authorization header")
@@ -79,41 +78,6 @@ func (g *GitHub) CacheKey(req api.GetCredentialsRequest) string {
 		return "" // disable caching
 	}
 	return parsedURL.Host
-}
-
-func GitHubContainerRegistry() *oci.OCI {
-	realmForService := map[string]oci.WWWAuthenticate{
-		"ghcr.io": {
-			Realm:   "https://ghcr.io/token",
-			Service: "ghcr.io",
-		},
-	}
-	resolver := func(ctx context.Context) (map[string]func(registry, service, realm string) (oci.AuthConfig, error), error) {
-		cfg, err := configFromContext(ctx, tokenPurposeGHCR)
-		if err != nil {
-			return nil, err
-		}
-		source := &GitHubTokenSource{config: cfg}
-
-		actor, ok := os.LookupEnv("GITHUB_ACTOR")
-		if !ok {
-			actor = "unset"
-		}
-		return map[string]func(registry, service, realm string) (oci.AuthConfig, error){
-			"ghcr.io": func(registry, service, realm string) (oci.AuthConfig, error) {
-				token, err := source.Token()
-				if err != nil {
-					return oci.AuthConfig{}, err
-				}
-				return oci.AuthConfig{
-					Username: actor,
-					Password: token.AccessToken,
-				}, nil
-			},
-		}, nil
-	}
-
-	return oci.NewCustomOCI(realmForService, nil, resolver)
 }
 
 type GitHubResolver struct {
@@ -254,19 +218,8 @@ type configFragment struct {
 	ReadConfigFile bool               `json:"read_config_file"`
 }
 
-type tokenPurpose string
-
-const (
-	tokenPurposeAPI  tokenPurpose = "api"
-	tokenPurposeGHCR tokenPurpose = "ghcr"
-)
-
-func configFromContext(ctx context.Context, purpose tokenPurpose) (configFragment, error) {
-	return helperconfig.FromContext(ctx, configFragments[purpose])
-}
-
-var configFragments = map[tokenPurpose]configFragment{
-	tokenPurposeAPI: {
+func configFromContext(ctx context.Context) (configFragment, error) {
+	return helperconfig.FromContext(ctx, configFragment{
 		LookupChain: lookupchain.Default([]lookupchain.Source{
 			&lookupchain.Env{
 				Source:  "env",
@@ -285,30 +238,5 @@ var configFragments = map[tokenPurpose]configFragment{
 			},
 		}),
 		ReadConfigFile: true,
-	},
-	tokenPurposeGHCR: {
-		LookupChain: lookupchain.Default([]lookupchain.Source{
-			&lookupchain.Env{
-				Source:  "env",
-				Name:    "GHCR_TOKEN",
-				Binding: "default",
-			},
-			&lookupchain.Env{
-				Source:  "env",
-				Name:    "GH_TOKEN",
-				Binding: "default",
-			},
-			&lookupchain.Env{
-				Source:  "env",
-				Name:    "GITHUB_TOKEN",
-				Binding: "default",
-			},
-			&lookupchain.Keyring{
-				Source:  "keyring",
-				Service: "gh:github.com",
-				Binding: "default",
-			},
-		}),
-		ReadConfigFile: true,
-	},
+	})
 }

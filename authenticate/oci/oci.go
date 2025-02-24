@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/tweag/credential-helper/api"
+	"github.com/tweag/credential-helper/authenticate/internal/helperconfig"
+	"github.com/tweag/credential-helper/authenticate/internal/lookupchain"
 	"github.com/tweag/credential-helper/logging"
 	"golang.org/x/oauth2"
 )
@@ -69,6 +71,55 @@ func (o *OCI) Resolver(ctx context.Context) (api.Resolver, error) {
 		wwwAuthenticateForRegistry: o.wwwAuthenticateForRegistry,
 		authenticatorForRegistry:   o.authenticatorForRegistry,
 	}, nil
+}
+
+func (o *OCI) SetupInstructionsForURI(ctx context.Context, uri string) string {
+	parsedURL, error := url.Parse(uri)
+	if error != nil {
+		parsedURL = &url.URL{}
+	}
+
+	var lookupChainInstructions []string
+	cfg, err := configFromContext(ctx, parsedURL.Host)
+	if err == nil {
+		chain := lookupchain.New(cfg.LookupChain)
+		lookupChainInstructions = append(lookupChainInstructions, chain.SetupInstructions(BindingUsername, "Username"))
+		lookupChainInstructions = append(lookupChainInstructions, chain.SetupInstructions(BindingPassword, "Password"))
+		lookupChainInstructions = append(lookupChainInstructions, chain.SetupInstructions(BindingAuth, "username:password encoded as base64"))
+		lookupChainInstructions = append(lookupChainInstructions, chain.SetupInstructions(BindingIdentityToken, "used for OAuth"))
+		lookupChainInstructions = append(lookupChainInstructions, chain.SetupInstructions(BindingRegistryToken, "immediately usable token for the registry - no exchange necessary"))
+	} else {
+		lookupChainInstructions = []string{fmt.Sprintf("due to a configuration parsing issue, no further setup instructions are available: %v", err)}
+	}
+
+	var serviceString string
+	switch parsedURL.Host {
+	case "ghcr.io":
+		serviceString = "GitHub Container Registry image"
+	default:
+		serviceString = "container image"
+	}
+
+	return fmt.Sprintf(`%s is a %s.
+
+The credential helper can be used to download container images from OCI registries.
+
+Default flow:
+
+  If no custom logic exists to obtain tokens for a specific registry,
+  the helper parses your docker config (~/.docker/config.json) to obtain credentials for registries.
+  This allows you to use any registry that can be used via docker pull, simply by configuring it in advance with docker login
+
+Custom implementations:
+
+  For selected registries, the credential helper implements custom logic for obtaining tokens.
+
+  - GitHub packages / ghcr.io
+
+    For the GitHub container registry, the credential helper uses the same token flow that is also used for the GitHub api.
+    You can use a different token for ghcr.io by setting the $GHCR_TOKEN environment variable.
+
+%s`, uri, serviceString, strings.Join(lookupChainInstructions, "\n\n"))
 }
 
 // CacheKey returns a cache key for the given request.
@@ -211,7 +262,7 @@ func (o *OCIResolver) Exchange(ctx context.Context, registry string, scopes []st
 
 	logging.Debugf("exchange token for registry %v, service %v, realm %v", registry, wwwAuthenticate.Service, wwwAuthenticate.Realm)
 
-	cfg, err := o.deriveAuthConfig(registry, wwwAuthenticate.Service, wwwAuthenticate.Realm)
+	cfg, err := o.deriveAuthConfig(ctx, registry, wwwAuthenticate.Service, wwwAuthenticate.Realm)
 	if err != nil {
 		return nil, fmt.Errorf("deriving auth config for registry %q: %w", registry, err)
 	}
@@ -227,6 +278,15 @@ func (o *OCIResolver) Exchange(ctx context.Context, registry string, scopes []st
 	}
 
 	// decide which method to use based on the auth config
+	if cfg.TokenExchangeMethod == "basic" {
+		return basicToken(ctx, wwwAuthenticate.Service, wwwAuthenticate.Realm, scopes, cfg)
+	} else if cfg.TokenExchangeMethod == "oauth2" {
+		return o.oauthToken(ctx, wwwAuthenticate.Service, wwwAuthenticate.Realm, scopes, cfg)
+	} else if cfg.TokenExchangeMethod != "auto" {
+		return nil, fmt.Errorf("unsupported token exchange method %q", cfg.TokenExchangeMethod)
+	}
+
+	// auto mode
 	var token *oauth2.Token
 	var tokenErr error
 	if cfg.Username == "<token>" || cfg.IdentityToken != "" {
@@ -344,13 +404,14 @@ func (o *OCIResolver) oauthToken(ctx context.Context, service, realm string, sco
 	return token.Convert(time.Now().UTC()), nil
 }
 
-func (o *OCIResolver) deriveAuthConfig(registry, service, realm string) (AuthConfig, error) {
+func (o *OCIResolver) deriveAuthConfig(ctx context.Context, registry, service, realm string) (AuthConfig, error) {
 	o.mux.Lock()
 	defer o.mux.Unlock()
 
 	logging.Debugf("deriving auth config for registry %q", registry)
 
 	if authenticator, ok := o.authenticatorForRegistry[registry]; ok {
+		// try custom authenticator
 		customAuthConfig, err := authenticator(registry, service, realm)
 		if err != nil {
 			return AuthConfig{}, err
@@ -360,30 +421,77 @@ func (o *OCIResolver) deriveAuthConfig(registry, service, realm string) (AuthCon
 			return customAuthConfig, nil
 		}
 		// if the custom authenticator returned an empty config
-		// we fall back to the Docker config
+		// we fall back to the lookup_chain and Docker config
 	}
 
-	logging.Debugf("no custom authenticator found for registry %q - trying docker config", registry)
-
-	// try to derive the auth config from the Docker config
-	dockerConfig, err := loadDockerConfig()
+	cfg, err := configFromContext(ctx, registry)
 	if err != nil {
-		return AuthConfig{}, fmt.Errorf("loading Docker config: %w", err)
+		return AuthConfig{}, fmt.Errorf("loading config from context: %w", err)
 	}
 
-	dockerAuthConfig, found, err := authForHost(dockerConfig, registry)
-	if err != nil {
-		return AuthConfig{}, fmt.Errorf("finding auth config for registry %q: %w", registry, err)
-	}
-	if found {
-		o.authenticatorForRegistry[registry] = func(registry, service, realm string) (AuthConfig, error) {
-			return dockerAuthConfig, nil
+	var authConfig AuthConfig
+
+	if cfg.ParseDockerConfig {
+		logging.Debugf("no custom authenticator found for registry %q - trying docker config", registry)
+
+		// try to derive the auth config from the Docker config
+		dockerConfig, err := loadDockerConfig()
+		if err != nil {
+			return AuthConfig{}, fmt.Errorf("loading Docker config: %w", err)
 		}
+
+		dockerAuthConfig, found, err := authForHost(dockerConfig, registry)
+		if err != nil {
+			return AuthConfig{}, fmt.Errorf("finding auth config for registry %q: %w", registry, err)
+		}
+		if found {
+			o.authenticatorForRegistry[registry] = func(registry, service, realm string) (AuthConfig, error) {
+				return dockerAuthConfig, nil
+			}
+		} else {
+			logging.Debugf("no auth config found for registry %q", registry)
+		}
+		authConfig = dockerAuthConfig
 	} else {
-		logging.Debugf("no auth config found for registry %q - trying anonymous auth", registry)
+		logging.Debugf("not parsing Docker config for registry %q", registry)
 	}
 
-	return dockerAuthConfig, nil
+	authConfig.TokenExchangeMethod = cfg.TokenExchangeMethod
+
+	// try to find overrides for the docker auth config
+	// in the lookup chain
+	chain := lookupchain.New(cfg.LookupChain)
+	unsername, unsernameErr := chain.Lookup(BindingUsername)
+	password, passwordErr := chain.Lookup(BindingPassword)
+	auth, authErr := chain.Lookup(BindingAuth)
+	identityToken, identityTokenErr := chain.Lookup(BindingIdentityToken)
+	registryToken, registryTokenErr := chain.Lookup(BindingRegistryToken)
+
+	if unsernameErr == nil {
+		logging.Debugf("found username in lookup chain: %s", unsername)
+		authConfig.Username = unsername
+	}
+	if passwordErr == nil {
+		logging.Debugf("using password from lookup chain")
+		authConfig.Password = password
+		if authConfig.Username == "" {
+			authConfig.Username = "unset"
+		}
+	}
+	if authErr == nil {
+		logging.Debugf("using auth from lookup chain")
+		authConfig.Auth = auth
+	}
+	if identityTokenErr == nil {
+		logging.Debugf("using identity token from lookup chain")
+		authConfig.IdentityToken = identityToken
+	}
+	if registryTokenErr == nil {
+		logging.Debugf("using registry token from lookup chain")
+		authConfig.RegistryToken = registryToken
+	}
+
+	return authConfig, nil
 }
 
 func deriveRepository(uri string) (registry, repository string, ignore bool, err error) {
@@ -438,7 +546,6 @@ func deriveRepository(uri string) (registry, repository string, ignore bool, err
 	}
 
 	return u.Host, strings.TrimSuffix(endpoint, suffix), false, nil
-
 }
 
 // GuessOCIRegistry returns true if the given URI is likely to be an OCI registry.
@@ -456,4 +563,72 @@ func GuessOCIRegistry(uri string) bool {
 		return false
 	}
 	return true
+}
+
+const (
+	BindingUsername      = "username"
+	BindingPassword      = "password"
+	BindingAuth          = "auth"
+	BindingIdentityToken = "identitytoken"
+	BindingRegistryToken = "registrytoken"
+)
+
+type configFragment struct {
+	ParseDockerConfig bool `json:"parse_docker_config,omitempty"`
+	// TokenExchangeMethod is the method used to exchange the token.
+	// It can be "auto", "oauth2", or "basic".
+	// Defaults to "auto".
+	TokenExchangeMethod string `json:"token_exchange_method,omitempty"`
+	// LookupChain defines the order in which secrets are looked up from sources.
+	// Each element is a string that identifies a secret source.
+	LookupChain lookupchain.Config `json:"lookup_chain,omitempty"`
+}
+
+func configFromContext(ctx context.Context, registry string) (configFragment, error) {
+	cfg := configFragment{
+		ParseDockerConfig:   true,
+		TokenExchangeMethod: "auto",
+		LookupChain:         lookupchain.Default(lookupChainByRegistry[registry]),
+	}
+
+	return helperconfig.FromContext(ctx, cfg)
+}
+
+var lookupChainByRegistry = map[string][]lookupchain.Source{
+	"ghcr.io": {
+		// username
+		&lookupchain.Env{
+			Source:  "env",
+			Name:    "GITHUB_ACTOR",
+			Binding: BindingUsername,
+		},
+		&lookupchain.Static{
+			Source: "env",
+			// ghcr.io requires a username to be set, but doesn't validate it
+			Value:   "unset",
+			Binding: BindingUsername,
+		},
+
+		// password
+		&lookupchain.Env{
+			Source:  "env",
+			Name:    "GHCR_TOKEN",
+			Binding: BindingPassword,
+		},
+		&lookupchain.Env{
+			Source:  "env",
+			Name:    "GH_TOKEN",
+			Binding: BindingPassword,
+		},
+		&lookupchain.Env{
+			Source:  "env",
+			Name:    "GITHUB_TOKEN",
+			Binding: BindingPassword,
+		},
+		&lookupchain.Keyring{
+			Source:  "keyring",
+			Service: "gh:github.com",
+			Binding: BindingPassword,
+		},
+	},
 }
