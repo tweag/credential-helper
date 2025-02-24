@@ -304,11 +304,6 @@ type configFragment struct {
 func configFromContext(ctx context.Context, uri *url.URL) (configFragment, error) {
 	sources := []lookupchain.Source{
 		// acces key id
-		&lookupchain.Env{
-			Source:  "env",
-			Name:    "AWS_ACCESS_KEY_ID",
-			Binding: BindigAccessKeyID,
-		},
 		&lookupchain.Keyring{
 			Source:  "env",
 			Service: "tweag-credential-helper:aws-access-key-id",
@@ -316,11 +311,6 @@ func configFromContext(ctx context.Context, uri *url.URL) (configFragment, error
 		},
 
 		// secret access key
-		&lookupchain.Env{
-			Source:  "env",
-			Name:    "AWS_SECRET_ACCESS_KEY",
-			Binding: BindingSecretAccessKey,
-		},
 		&lookupchain.Keyring{
 			Source:  "env",
 			Service: "tweag-credential-helper:aws-secret-access-key",
@@ -328,11 +318,6 @@ func configFromContext(ctx context.Context, uri *url.URL) (configFragment, error
 		},
 
 		// default region
-		&lookupchain.Env{
-			Source:  "env",
-			Name:    "AWS_DEFAULT_REGION",
-			Binding: BindingRegion,
-		},
 		&lookupchain.Keyring{
 			Source:  "env",
 			Service: "tweag-credential-helper:aws-default-region",
