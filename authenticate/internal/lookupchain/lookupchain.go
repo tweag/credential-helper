@@ -40,7 +40,7 @@ func (c *LookupChain) Lookup(binding string) (string, error) {
 		if err == nil {
 			return result, nil
 		}
-		if errors.Is(err, notFoundError) {
+		if IsNotFoundErr(err) {
 			continue
 		}
 		return "", fmt.Errorf("looking up binding %q: %w", binding, err)
@@ -49,7 +49,7 @@ func (c *LookupChain) Lookup(binding string) (string, error) {
 	for i, entry := range c.config {
 		sourceNames[i] = entry.Source
 	}
-	return "", fmt.Errorf("no value found for binding %q after querying %v", binding, strings.Join(sourceNames, ", "))
+	return "", &NotFoundErr{reason: fmt.Sprintf("no value found for binding %q after querying %v", binding, strings.Join(sourceNames, ", "))}
 }
 
 func (c *LookupChain) SetupInstructions(binding, meaning string) string {
@@ -126,11 +126,11 @@ type Env struct {
 
 func (e *Env) Lookup(binding string) (string, error) {
 	if e.Binding != binding {
-		return "", notFoundError
+		return "", &NotFoundErr{}
 	}
 	val, ok := os.LookupEnv(e.Name)
 	if !ok {
-		return "", notFoundError
+		return "", &NotFoundErr{}
 	}
 	return val, nil
 }
@@ -170,11 +170,11 @@ type Keyring struct {
 
 func (k *Keyring) Lookup(binding string) (string, error) {
 	if k.Binding != binding {
-		return "", notFoundError
+		return "", &NotFoundErr{}
 	}
 	val, err := keyring.Get(k.Service, "")
 	if errors.Is(err, keyring.ErrNotFound) {
-		return "", notFoundError
+		return "", &NotFoundErr{reason: err.Error()}
 	}
 	if err != nil {
 		return "", err
@@ -236,4 +236,18 @@ func Default(in []Source) Config {
 	return out
 }
 
-var notFoundError = errors.New("not found")
+type NotFoundErr struct {
+	reason string
+}
+
+func (e *NotFoundErr) Error() string {
+	if e == nil || e.reason == "" {
+		return "not found"
+	}
+	return e.reason
+}
+
+func IsNotFoundErr(err error) bool {
+	var nfe *NotFoundErr
+	return errors.As(err, &nfe)
+}
