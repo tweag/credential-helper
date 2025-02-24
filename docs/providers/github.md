@@ -38,6 +38,31 @@ common --credential_helper=github.com=%workspace%/tools/credential-helper
 common --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper
 ```
 
+The configuration in `.tweag-credential-helper.json` supports the following values:
+
+- `.urls[].helper`: `"github"` (name of the helper)
+- `.urls[].config.read_config_file`: Boolean (default: `true`). If set, allows the helper to search the GitHub config file (`~/.config/gh/hosts.yml`) for tokens
+- `.urls[].config.lookup_chain`: The [lookup chain][lookup_chain] used to find the `default` secret. Defaults to:
+    ```json
+    [
+        {
+            "source": "env",
+            "name": "GH_TOKEN",
+            "binding": "default"
+        },
+        {
+            "source": "env",
+            "name": "GITHUB_TOKEN",
+            "binding": "default"
+        },
+        {
+            "source": "keyring",
+            "name": "gh:github.com",
+            "binding": "default"
+        }
+    ]
+    ```
+
 ## Troubleshooting
 
 ### HTTP 401 or 403 error codes
