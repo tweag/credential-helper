@@ -9,6 +9,7 @@ go_library(
         "//api",
         "//authenticate/internal/helperconfig",
         "//authenticate/internal/lookupchain",
+        "//logging",
         "@com_github_aws_aws_sdk_go_v2//aws/signer/v4:signer",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
         "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",
