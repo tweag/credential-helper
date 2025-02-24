@@ -27,11 +27,11 @@ While mTLS cannot be setup using a credential helper, any authentication scheme 
 The configuration in `.tweag-credential-helper.json` supports the following values:
 
 - `.urls[].helper`: `"remoteapis"` (name of the helper)
-- `.urls[].auth_method`: one of
+- `.urls[].config.auth_method`: one of
     - `"header"`: Default. Send a HTTP header with the value being the default secret.
     - `"basic_auth"` Used by `bazel-remote`. Send the default secret containing username and password (`username:password`) as a basic auth header.
-- `.urls[].header_name`: Name of the HTTP header used for authentication. Example: use `"x-buildbuddy_api_key"` for BuildBuddy.
-- `.urls[].lookup_chain`: The [lookup chain][lookup_chain] used to find the `default` secret. Defaults to:
+- `.urls[].config.header_name`: Name of the HTTP header used for authentication. Example: use `"x-buildbuddy_api_key"` for BuildBuddy.
+- `.urls[].config.lookup_chain`: The [lookup chain][lookup_chain] used to find the `default` secret. Defaults to:
     ```json
     [
         {
