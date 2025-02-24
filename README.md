@@ -50,6 +50,7 @@ sequenceDiagram
 
 The following providers are supported as of today:
 
+- [Remote Execution & Remote Caching Services](/docs/providers/remoteapis.md)
 - [AWS S3](/docs/providers/s3.md)
 - [Cloudflare R2](/docs/providers/r2.md)
 - [Google Cloud Storage (GCS)](/docs/providers/gcs.md)
@@ -142,6 +143,11 @@ Now is a good time to install the credential helper. Simply run `bazel run @twea
 Alternatively, you can [write custom plugins that are part of your own Bazel workspace and build your own helper][plugins].
 
 Follow the [provider-specific documentation](/docs/providers/) to ensure you can authenticate to the service.
+In most cases, you the credential helper can guide you through the required setup for a URL with the following command:
+
+```
+tools/credential-helper setup-uri <URL>
+```
 
 You can also look at the [example project](/examples/full/) to see how everything works together.
 
@@ -160,6 +166,7 @@ You can override the config file location using the `$CREDENTIAL_HELPER_CONFIG_F
 - `.urls[].path`: Path of the url. Matches any path when empty and uses globbing otherwise (a `*` matches any characters).
 - `.urls[].helper`: Helper to use for this url. Can be one of `s3`, `gcs`, `github`, `oci` or `null`.
 - `.urls[].config`: Optional helper-specific configuration. Refer to the documentation of the chosen helper for more information.
+- `.urls[].config.lookup_chain`: Most helpers support configurable sources for secrets. Consult [the documenation on lookup chains][lookup_chain] for more information.
 
 ### Example
 
@@ -182,12 +189,30 @@ You can override the config file location using the `$CREDENTIAL_HELPER_CONFIG_F
     {
       "host": "*.oci.acme.corp",
       "helper": "oci"
+    },
+    {
+      "host": "bazel-remote.acme.com",
+      "helper": "remoteapis",
+      "config": {
+        "auth_method": "basic_auth",
+        "lookup_chain": [
+            {
+                "source": "env",
+                "name": "CREDENTIAL_HELPER_REMOTEAPIS_SECRET"
+            },
+            {
+                "source": "keyring",
+                "service": "tweag-credential-helper:remoteapis"
+            }
+        ]
+      }
     }
   ]
 }
 ```
 
 In this example requests to any path below `https://github.com/tweag/` would use the GitHub helper, any requests to `https://files.acme.corp` that end in `.tar.gz` would use the S3 helper, while any requests to a subdomain of `oci.acme.corp` would use the oci helper.
+Additionally, a `baze-remote` instance can be used as a remote cache.
 
 ## Environment variables
 
@@ -295,3 +320,4 @@ The agent does not implement additional countermeasures. Consequently, access to
 [go_duration]: https://pkg.go.dev/time#ParseDuration
 [plugins]: /docs/plugins.md
 [bcr]: https://registry.bazel.build/modules/tweag-credential-helper
+[lookup_chain]: /docs/lookup_chain.md
