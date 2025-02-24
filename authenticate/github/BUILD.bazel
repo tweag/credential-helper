@@ -7,9 +7,10 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//api",
+        "//authenticate/internal/helperconfig",
+        "//authenticate/internal/lookupchain",
         "//authenticate/oci",
         "//logging",
-        "@com_github_zalando_go_keyring//:go-keyring",
         "@io_k8s_sigs_yaml//:yaml",
         "@org_golang_x_oauth2//:oauth2",
     ],

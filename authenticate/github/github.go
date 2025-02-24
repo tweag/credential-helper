@@ -13,9 +13,10 @@ import (
 	"time"
 
 	"github.com/tweag/credential-helper/api"
+	"github.com/tweag/credential-helper/authenticate/internal/helperconfig"
+	"github.com/tweag/credential-helper/authenticate/internal/lookupchain"
 	"github.com/tweag/credential-helper/authenticate/oci"
 	"github.com/tweag/credential-helper/logging"
-	keyring "github.com/zalando/go-keyring"
 	"golang.org/x/oauth2"
 	"sigs.k8s.io/yaml"
 )
@@ -23,14 +24,23 @@ import (
 type GitHub struct{}
 
 func (g *GitHub) Resolver(ctx context.Context) (api.Resolver, error) {
-	source, err := selectTokenSource(tokenPurposeAPI)
+	cfg, err := configFromContext(ctx, tokenPurposeAPI)
 	if err != nil {
 		return nil, err
 	}
-	return &GitHubResolver{tokenSource: source}, nil
+	return &GitHubResolver{tokenSource: &GitHubTokenSource{config: cfg}}, nil
 }
 
 func (g *GitHub) SetupInstructionsForURI(ctx context.Context, uri string) string {
+	var lookupChainInstructions string
+	cfg, err := configFromContext(ctx, tokenPurposeAPI)
+	if err == nil {
+		chain := lookupchain.New(cfg.LookupChain)
+		lookupChainInstructions = chain.SetupInstructions("default", "secret sent to GitHub as a bearer token in the Authorization header")
+	} else {
+		lookupChainInstructions = fmt.Sprintf("due to a configuration parsing issue, no further setup instructions are available: %v", err)
+	}
+
 	return fmt.Sprintf(`%s is a GitHub url.
 
 The credential helper can be used to download any assets GitHub hosts, including:
@@ -56,7 +66,9 @@ Authentication Methods:
   Option 2: Authentication using a GitHub App, GitHub Actions Token or Personal Access Token (PAT)
     1. Setup your authentication method of choice
     2. Set the required environment variable (GH_TOKEN or GITHUB_TOKEN) when running Bazel (or other tools that access credential helpers)
-    3. Alternatively, add the secret to the system keyring under the gh:github.com key`, uri)
+    3. Alternatively, add the secret to the system keyring under the gh:github.com key
+
+%s`, uri, lookupChainInstructions)
 }
 
 // CacheKey returns a cache key for the given request.
@@ -77,11 +89,12 @@ func GitHubContainerRegistry() *oci.OCI {
 		},
 	}
 	resolver := func(ctx context.Context) (map[string]func(registry, service, realm string) (oci.AuthConfig, error), error) {
-		source, err := selectTokenSource(tokenPurposeGHCR)
+		cfg, err := configFromContext(ctx, tokenPurposeGHCR)
 		if err != nil {
-			logging.Debugf("no token source found for ghcr.io - allowing fallback to docker config: %v", err)
-			return nil, nil
+			return nil, err
 		}
+		source := &GitHubTokenSource{config: cfg}
+
 		actor, ok := os.LookupEnv("GITHUB_ACTOR")
 		if !ok {
 			actor = "unset"
@@ -176,48 +189,31 @@ func hostsFromFile(path string) (HostsFile, error) {
 }
 
 type GitHubTokenSource struct {
-	token string
-}
-
-func NewGitHubTokenSourceFromEnv(purpose tokenPurpose) (*GitHubTokenSource, error) {
-	if purpose == tokenPurposeGHCR {
-		token, ok := os.LookupEnv("GHCR_TOKEN")
-		if ok {
-			return &GitHubTokenSource{token: token}, nil
-		}
-	}
-
-	token, ok := os.LookupEnv("GH_TOKEN")
-	if ok {
-		return &GitHubTokenSource{token: token}, nil
-	}
-	token, ok = os.LookupEnv("GITHUB_TOKEN")
-	if ok {
-		return &GitHubTokenSource{token: token}, nil
-	}
-	return nil, fmt.Errorf("no token found in environment")
-}
-
-func NewGitHubTokenSourceFromFile() (*GitHubTokenSource, error) {
-	const host = "github.com"
-	cfg, err := hostsFromFile(filepath.Join(configDir(), "hosts.yml"))
-	if err != nil {
-		return nil, err
-	}
-	hostCfg, ok := cfg[host]
-	if !ok || hostCfg.OAuthToken == "" {
-		return nil, fmt.Errorf("no token found for host %q", host)
-	}
-	return &GitHubTokenSource{token: hostCfg.OAuthToken}, nil
+	config configFragment
 }
 
 func (g *GitHubTokenSource) Token() (*oauth2.Token, error) {
-	if g.token == "" {
-		return nil, errors.New("no token available")
+	chain := lookupchain.New(g.config.LookupChain)
+	token, err := chain.Lookup("default")
+	if lookupchain.IsNotFoundErr(err) && g.config.ReadConfigFile {
+		logging.Debugf("no token found in lookup chain - falling back to GitHub config file: %v", err)
+		const host = "github.com"
+		cfg, err := hostsFromFile(filepath.Join(configDir(), "hosts.yml"))
+		if err != nil {
+			return nil, err
+		}
+		hostCfg, ok := cfg[host]
+		if !ok || hostCfg.OAuthToken == "" {
+			return nil, errors.New("no token available")
+		}
+		token = hostCfg.OAuthToken
+	} else if err != nil {
+		return nil, err
 	}
+
 	return &oauth2.Token{
-		AccessToken: g.token,
-		Expiry:      g.checkTokenExpiration(),
+		AccessToken: token,
+		Expiry:      g.checkTokenExpiration(token),
 		// TODO: add method to reload token from disk
 		// in case this token is known to have expired
 	}, nil
@@ -226,12 +222,12 @@ func (g *GitHubTokenSource) Token() (*oauth2.Token, error) {
 // checkTokenExpiration uses the `/rate_limit` api endpoint to
 // query for the token expiration.
 // May return zero time if this information is not provided.
-func (g *GitHubTokenSource) checkTokenExpiration() time.Time {
+func (g *GitHubTokenSource) checkTokenExpiration(token string) time.Time {
 	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/rate_limit", http.NoBody)
 	if err != nil {
 		return time.Time{}
 	}
-	req.Header["Authorization"] = []string{"Bearer " + g.token}
+	req.Header["Authorization"] = []string{"Bearer " + token}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return time.Time{}
@@ -253,6 +249,11 @@ type HostConfig struct {
 	OAuthToken string `json:"oauth_token"`
 }
 
+type configFragment struct {
+	LookupChain    lookupchain.Config `json:"lookup_chain"`
+	ReadConfigFile bool               `json:"read_config_file"`
+}
+
 type tokenPurpose string
 
 const (
@@ -260,20 +261,54 @@ const (
 	tokenPurposeGHCR tokenPurpose = "ghcr"
 )
 
-func selectTokenSource(purpose tokenPurpose) (oauth2.TokenSource, error) {
-	if tokenSource, err := NewGitHubTokenSourceFromEnv(purpose); err == nil {
-		logging.Basicf("using GitHub token from environment")
-		return tokenSource, nil
-	}
-	tokenSource, err := NewGitHubTokenSourceFromFile()
-	if err == nil {
-		logging.Debugf("loaded GitHub hosts file from %s", filepath.Join(configDir(), "hosts.yml"))
-		return tokenSource, nil
-	}
-	token, err := keyring.Get("gh:github.com", "")
-	if err == nil {
-		logging.Basicf("using GitHub token from keyring")
-		return &GitHubTokenSource{token: token}, nil
-	}
-	return nil, errors.New("no GitHub token found")
+func configFromContext(ctx context.Context, purpose tokenPurpose) (configFragment, error) {
+	return helperconfig.FromContext(ctx, configFragments[purpose])
+}
+
+var configFragments = map[tokenPurpose]configFragment{
+	tokenPurposeAPI: {
+		LookupChain: lookupchain.Default([]lookupchain.Source{
+			&lookupchain.Env{
+				Source:  "env",
+				Name:    "GH_TOKEN",
+				Binding: "default",
+			},
+			&lookupchain.Env{
+				Source:  "env",
+				Name:    "GITHUB_TOKEN",
+				Binding: "default",
+			},
+			&lookupchain.Keyring{
+				Source:  "keyring",
+				Service: "gh:github.com",
+				Binding: "default",
+			},
+		}),
+		ReadConfigFile: true,
+	},
+	tokenPurposeGHCR: {
+		LookupChain: lookupchain.Default([]lookupchain.Source{
+			&lookupchain.Env{
+				Source:  "env",
+				Name:    "GHCR_TOKEN",
+				Binding: "default",
+			},
+			&lookupchain.Env{
+				Source:  "env",
+				Name:    "GH_TOKEN",
+				Binding: "default",
+			},
+			&lookupchain.Env{
+				Source:  "env",
+				Name:    "GITHUB_TOKEN",
+				Binding: "default",
+			},
+			&lookupchain.Keyring{
+				Source:  "keyring",
+				Service: "gh:github.com",
+				Binding: "default",
+			},
+		}),
+		ReadConfigFile: true,
+	},
 }
