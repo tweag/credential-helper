@@ -35,8 +35,13 @@ func (g *RemoteAPIs) CacheKey(req api.GetCredentialsRequest) string {
 }
 
 func (g *RemoteAPIs) SetupInstructionsForURI(ctx context.Context, uri string) string {
+	parsedURL, error := url.Parse(uri)
+	if error != nil {
+		parsedURL = &url.URL{}
+	}
+
 	var lookupChainInstructions string
-	cfg, err := configFromContext(ctx)
+	cfg, err := configFromContext(ctx, parsedURL)
 	if err == nil {
 		chain := lookupchain.New(cfg.LookupChain)
 		lookupChainInstructions = chain.SetupInstructions("default", "secret sent to remote APIs as an authentication token or basic auth credentials")
@@ -63,16 +68,6 @@ func (RemoteAPIs) Resolver(ctx context.Context) (api.Resolver, error) {
 //
 // https://github.com/EngFlow/credential-helper-spec/blob/main/spec.md#get
 func (g *RemoteAPIs) Get(ctx context.Context, req api.GetCredentialsRequest) (api.GetCredentialsResponse, error) {
-	cfg, err := configFromContext(ctx)
-	if err != nil {
-		return api.GetCredentialsResponse{}, fmt.Errorf("getting configuration fragment for remotapis helper and url %s: %w", req.URI, err)
-	}
-	chain := lookupchain.New(cfg.LookupChain)
-	secret, err := chain.Lookup("default")
-	if err != nil {
-		return api.GetCredentialsResponse{}, err
-	}
-
 	parsedURL, error := url.Parse(req.URI)
 	if error != nil {
 		return api.GetCredentialsResponse{}, error
@@ -109,6 +104,17 @@ func (g *RemoteAPIs) Get(ctx context.Context, req api.GetCredentialsRequest) (ap
 	case REMOTE_EXECUTION_V2_CAPABILITIES:
 	case REMOTE_EXECUTION_V2_CONTENTADDRESSABLESTORAGE:
 	case REMOTE_EXECUTION_V2_EXECUTION:
+	}
+
+	cfg, err := configFromContext(ctx, parsedURL)
+	if err != nil {
+		return api.GetCredentialsResponse{}, fmt.Errorf("getting configuration fragment for remotapis helper and url %s: %w", req.URI, err)
+	}
+
+	chain := lookupchain.New(cfg.LookupChain)
+	secret, err := chain.Lookup("default")
+	if err != nil {
+		return api.GetCredentialsResponse{}, err
 	}
 
 	headerName := cfg.HeaderName
@@ -160,7 +166,11 @@ type configFragment struct {
 	LookupChain lookupchain.Config `json:"lookup_chain"`
 }
 
-func configFromContext(ctx context.Context) (configFragment, error) {
+func configFromContext(ctx context.Context, uri *url.URL) (configFragment, error) {
+	if cfg, ok := wellKnownServices[uri.Host]; ok {
+		return cfg, nil
+	}
+
 	return helperconfig.FromContext(ctx, configFragment{
 		AuthMethod: "header",
 		LookupChain: lookupchain.Default([]lookupchain.Source{
@@ -176,4 +186,23 @@ func configFromContext(ctx context.Context) (configFragment, error) {
 			},
 		}),
 	})
+}
+
+var wellKnownServices = map[string]configFragment{
+	"remote.buildbuddy.io": {
+		AuthMethod: "header",
+		HeaderName: "x-buildbuddy-api-key",
+		LookupChain: lookupchain.Default([]lookupchain.Source{
+			&lookupchain.Env{
+				Source:  "env",
+				Name:    "BUILDBUDDY_API_KEY",
+				Binding: "default",
+			},
+			&lookupchain.Keyring{
+				Source:  "keyring",
+				Service: "tweag-credential-helper:buildbuddy_api_key",
+				Binding: "default",
+			},
+		}),
+	},
 }
