@@ -31,6 +31,7 @@ func (c *LookupChain) Lookup(binding string) (string, error) {
 	if len(c.config) == 0 {
 		return "", fmt.Errorf("no sources configured to look up binding %q", binding)
 	}
+	var errs []error
 	for _, entry := range c.config {
 		source, err := c.sourceFor(entry)
 		if err != nil {
@@ -43,12 +44,17 @@ func (c *LookupChain) Lookup(binding string) (string, error) {
 		if IsNotFoundErr(err) {
 			continue
 		}
-		return "", fmt.Errorf("looking up binding %q: %w", binding, err)
+		errs = append(errs, fmt.Errorf("source %q: %w", entry.Source, err))
 	}
 	sourceNames := make([]string, len(c.config))
 	for i, entry := range c.config {
 		sourceNames[i] = entry.Source
 	}
+
+	if len(errs) > 0 {
+		return "", fmt.Errorf("no value found for binding %q after querying: %w", binding, errors.Join(errs...))
+	}
+
 	return "", &NotFoundErr{reason: fmt.Sprintf("no value found for binding %q after querying %v", binding, strings.Join(sourceNames, ", "))}
 }
 

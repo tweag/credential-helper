@@ -17,6 +17,7 @@ import (
 	"github.com/tweag/credential-helper/api"
 	"github.com/tweag/credential-helper/authenticate/internal/helperconfig"
 	"github.com/tweag/credential-helper/authenticate/internal/lookupchain"
+	"github.com/tweag/credential-helper/logging"
 )
 
 const (
@@ -134,8 +135,10 @@ func (s *S3Resolver) Get(ctx context.Context, req api.GetCredentialsRequest) (ap
 	accessKeyIDLookup, err := chain.Lookup(BindigAccessKeyID)
 	if err == nil {
 		accessKeyID = accessKeyIDLookup
-	} else if !lookupchain.IsNotFoundErr(err) {
-		return api.GetCredentialsResponse{}, err
+	} else if lookupchain.IsNotFoundErr(err) {
+		logging.Debugf("access key id lookup: binding %s did not yield any secrets - continuing without", BindigAccessKeyID)
+	} else {
+		logging.Debugf("access key id lookup failed - continuing without: %v", err)
 	}
 
 	if providerFromHost(parsedURL.Host) == ProviderCloudflareR2 {
@@ -146,16 +149,15 @@ func (s *S3Resolver) Get(ctx context.Context, req api.GetCredentialsRequest) (ap
 			hasher.Write([]byte(cloudflareAPIToken))
 			secretAccessKey = hex.EncodeToString(hasher.Sum(nil))
 		}
-		if err != nil && !lookupchain.IsNotFoundErr(err) {
-			return api.GetCredentialsResponse{}, err
-		}
 	}
 
 	secretAccessKeyLookup, err := chain.Lookup(BindingSecretAccessKey)
 	if err == nil {
 		secretAccessKey = secretAccessKeyLookup
-	} else if !lookupchain.IsNotFoundErr(err) {
-		return api.GetCredentialsResponse{}, err
+	} else if lookupchain.IsNotFoundErr(err) {
+		logging.Debugf("secret access key lookup: binding %s did not yield any secrets - continuing without", BindingSecretAccessKey)
+	} else {
+		logging.Debugf("secret access key lookup failed - continuing without: %v", err)
 	}
 
 	sessionTokenLookup, err := chain.Lookup(BindingSessionToken)
@@ -170,8 +172,10 @@ func (s *S3Resolver) Get(ctx context.Context, req api.GetCredentialsRequest) (ap
 	regionLookup, err := chain.Lookup(BindingRegion)
 	if err == nil {
 		region = regionLookup
-	} else if !lookupchain.IsNotFoundErr(err) {
-		return api.GetCredentialsResponse{}, err
+	} else if lookupchain.IsNotFoundErr(err) {
+		logging.Debugf("aws region lookup: binding %s did not yield any secrets - continuing without", BindingRegion)
+	} else {
+		logging.Debugf("aws region lookup failed - continuing without: %v", err)
 	}
 
 	var awsConfigOptions []func(*config.LoadOptions) error
