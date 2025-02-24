@@ -168,7 +168,7 @@ type configFragment struct {
 
 func configFromContext(ctx context.Context, uri *url.URL) (configFragment, error) {
 	if cfg, ok := wellKnownServices[uri.Host]; ok {
-		return cfg, nil
+		return helperconfig.FromContext(ctx, cfg)
 	}
 
 	return helperconfig.FromContext(ctx, configFragment{
