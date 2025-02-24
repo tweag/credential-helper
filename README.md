@@ -67,7 +67,7 @@ Add the following to your `MODULE.bazel` if you want to perform the recommended 
 The latest release can always be found on the [Bazel Central Registry][bcr]:
 
 ```starlark
-bazel_dep(name = "tweag-credential-helper", version = "0.0.1")
+bazel_dep(name = "tweag-credential-helper", version = "0.0.2")
 ```
 
 Then add the shell stub to your own workspace.
