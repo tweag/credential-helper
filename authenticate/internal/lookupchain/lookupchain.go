@@ -15,6 +15,7 @@ import (
 const (
 	SourceEnv     = "env"
 	SourceKeyring = "keyring"
+	SourceStatic  = "static"
 )
 
 type LookupChain struct {
@@ -59,9 +60,6 @@ func (c *LookupChain) Lookup(binding string) (string, error) {
 }
 
 func (c *LookupChain) SetupInstructions(binding, meaning string) string {
-	if len(c.config) == 0 {
-		return fmt.Sprintf("No sources are configured to look up the secret with binding name %s. Refer to the documentation related to configuration files for more information.", binding)
-	}
 	instructions := []string{fmt.Sprintf("Instructions for setting up the secret with binding name %q (%s):", binding, meaning)}
 	for i, entry := range c.config {
 		source, err := c.sourceFor(entry)
@@ -73,6 +71,9 @@ func (c *LookupChain) SetupInstructions(binding, meaning string) string {
 		if ok {
 			instructions = append(instructions, instruction)
 		}
+	}
+	if len(instructions) == 1 {
+		return fmt.Sprintf("No sources are available for setting up the secret with binding name %q (%s). Refer to the documentation related to configuration files for more information.", binding, meaning)
 	}
 	return strings.Join(instructions, "\n")
 }
@@ -95,6 +96,12 @@ func (c *LookupChain) sourceFor(entry ConfigEntry) (Source, error) {
 			return nil, fmt.Errorf("unmarshalling keyring source: %w", err)
 		}
 		source = &keyring
+	case SourceStatic:
+		var static Static
+		if err := decoder.Decode(&static); err != nil {
+			return nil, fmt.Errorf("unmarshalling static source: %w", err)
+		}
+		source = &static
 	default:
 		return nil, fmt.Errorf("unknown source %q", entry.Source)
 	}
@@ -211,6 +218,39 @@ func (e *Keyring) SetupInstructions(binding string) (string, bool) {
 
 	return fmt.Sprintf(` - Add the secret to the system keyring under the %s service name (status: %s):
     $ %s setup-keyring -f secret.txt %s`, e.Service, status, os.Args[0], e.Service), true
+}
+
+type Static struct {
+	// Source is the name of the source used to look up the secret.
+	// It must be "static".
+	Source string `json:"source"`
+	// Value is the static value to return.
+	Value string `json:"name"`
+	// Binding binds the value of the environment variable to a well-known name in the helper.
+	// If not specified, the value is bound to the default secret of the helper.
+	Binding string `json:"binding,omitempty"`
+}
+
+func (s *Static) Lookup(binding string) (string, error) {
+	if s.Binding != binding {
+		return "", &NotFoundErr{}
+	}
+	return s.Value, nil
+}
+
+func (s *Static) Canonicalize() {
+	s.Source = "static"
+	if s.Binding == "" {
+		s.Binding = "default"
+	}
+}
+
+func (s *Static) SetupInstructions(binding string) (string, bool) {
+	if s.Binding != binding {
+		return "", false
+	}
+
+	return fmt.Sprintf(" - If none of previous sources work, fall back to the static value %q (status: SET)", s.Value), true
 }
 
 // Default constructs a partially marshalled Config from a slice of specific config entries.
