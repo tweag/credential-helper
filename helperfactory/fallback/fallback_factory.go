@@ -9,6 +9,7 @@ import (
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
 	authenticateOCI "github.com/tweag/credential-helper/authenticate/oci"
+	authenticateRemoteAPIs "github.com/tweag/credential-helper/authenticate/remoteapis"
 	authenticateS3 "github.com/tweag/credential-helper/authenticate/s3"
 	"github.com/tweag/credential-helper/logging"
 )
@@ -33,6 +34,8 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		return authenticateGitHub.GitHubContainerRegistry(), nil
 	case strings.HasSuffix(strings.ToLower(u.Host), ".r2.cloudflarestorage.com") && !u.Query().Has("X-Amz-Expires"):
 		return &authenticateS3.R2{}, nil
+	case strings.EqualFold(u.Host, "remote.buildbuddy.io"):
+		return &authenticateRemoteAPIs.RemoteAPIs{}, nil
 	// container registries using the default OCI resolver
 	case strings.EqualFold(u.Host, "index.docker.io"):
 		fallthrough

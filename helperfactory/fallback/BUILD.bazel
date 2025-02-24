@@ -11,6 +11,7 @@ go_library(
         "//authenticate/github",
         "//authenticate/null",
         "//authenticate/oci",
+        "//authenticate/remoteapis",
         "//authenticate/s3",
         "//logging",
     ],
