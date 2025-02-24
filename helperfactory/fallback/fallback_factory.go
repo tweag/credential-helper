@@ -30,30 +30,32 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		fallthrough
 	case strings.EqualFold(u.Host, "raw.githubusercontent.com"):
 		return &authenticateGitHub.GitHub{}, nil
-	case strings.EqualFold(u.Host, "ghcr.io"):
-		return authenticateGitHub.GitHubContainerRegistry(), nil
 	case strings.HasSuffix(strings.ToLower(u.Host), ".r2.cloudflarestorage.com") && !u.Query().Has("X-Amz-Expires"):
 		return &authenticateS3.S3{}, nil
 	case strings.EqualFold(u.Host, "remote.buildbuddy.io"):
 		return &authenticateRemoteAPIs.RemoteAPIs{}, nil
 	// container registries using the default OCI resolver
-	case strings.EqualFold(u.Host, "index.docker.io"):
-		fallthrough
-	case strings.EqualFold(u.Host, "public.ecr.aws"):
-		fallthrough
-	case strings.EqualFold(u.Host, "cgr.dev"):
-		fallthrough
-	case strings.EqualFold(u.Host, "registry.gitlab.com"):
-		fallthrough
-	case strings.EqualFold(u.Host, "docker.elastic.co"):
-		fallthrough
-	case strings.EqualFold(u.Host, "quay.io"):
-		fallthrough
-	case strings.EqualFold(u.Host, "nvcr.io"):
+	case strings.HasSuffix(u.Host, ".app.snowflake.com"):
 		fallthrough
 	case strings.HasSuffix(u.Host, ".azurecr.io"):
 		fallthrough
-	case strings.HasSuffix(u.Host, ".app.snowflake.com"):
+	case strings.EqualFold(u.Host, "cgr.dev"):
+		fallthrough
+	case strings.EqualFold(u.Host, "docker.elastic.co"):
+		fallthrough
+	case strings.EqualFold(u.Host, "gcr.io"):
+		fallthrough
+	case strings.EqualFold(u.Host, "ghcr.io"):
+		fallthrough
+	case strings.EqualFold(u.Host, "index.docker.io"):
+		fallthrough
+	case strings.EqualFold(u.Host, "nvcr.io"):
+		fallthrough
+	case strings.EqualFold(u.Host, "public.ecr.aws"):
+		fallthrough
+	case strings.EqualFold(u.Host, "quay.io"):
+		fallthrough
+	case strings.EqualFold(u.Host, "registry.gitlab.com"):
 		return authenticateOCI.NewFallbackOCI(), nil
 	default:
 		if authenticateOCI.GuessOCIRegistry(rawURL) {

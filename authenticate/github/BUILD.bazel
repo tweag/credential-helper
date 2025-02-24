@@ -9,7 +9,6 @@ go_library(
         "//api",
         "//authenticate/internal/helperconfig",
         "//authenticate/internal/lookupchain",
-        "//authenticate/oci",
         "//logging",
         "@io_k8s_sigs_yaml//:yaml",
         "@org_golang_x_oauth2//:oauth2",

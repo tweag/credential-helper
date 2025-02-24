@@ -15,11 +15,12 @@ type WWWAuthenticate struct {
 }
 
 type AuthConfig struct {
-	Username      string
-	Password      string
-	Auth          string
-	IdentityToken string
-	RegistryToken string
+	Username            string
+	Password            string
+	Auth                string
+	IdentityToken       string
+	RegistryToken       string
+	TokenExchangeMethod string
 }
 
 type BasicAuthToken struct {

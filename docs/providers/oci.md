@@ -12,6 +12,21 @@ Add to your `.bazelrc`:
 common --credential_helper=index.docker.io=%workspace%/tools/credential-helper
 ```
 
+The configuration in `.tweag-credential-helper.json` supports the following values:
+
+- `.urls[].helper`: `"oci"` (name of the helper)
+- `.urls[].config.parse_docker_config`: Allow reading authentication from docker config (default: `true`)
+- `.urls[].config.token_exchange_method`: The method used for exchanging tokens (`"auto"`, `"oauth2"`, `"basic"`)
+- `.urls[].config.lookup_chain`: The [lookup chain][lookup_chain] used to find secrets
+
+In `.tweag-credential-helper.json`, you can use the following secret bindings for the [lookup chain][lookup_chain]:
+
+- `username`: Username used for authentication
+- `password`: Password used for authentication
+- `auth`: Combined username and password, encoded as base64
+- `identitytoken`: Identity Token (used for OAuth)
+- `registrytoken`: Registry Token (immediately usable token for the registry - no exchange necessary)
+
 ### Usage with rules_oci
 
 `rules_oci` tries to perform its own credential handling, but can be configured to use a credential helper instead.
@@ -37,7 +52,7 @@ If your registry of choice is publicly accessible, consider adding it to the lis
 ## Default flow
 
 If no custom logic exists to obtain tokens for a specific registry,
-the helper parses you docker config (`~/.docker/config.json`) to obtain credentials for registries.
+the helper parses your docker config (`~/.docker/config.json`) to obtain credentials for registries.
 This allows you to use any registry that can be used via `docker pull`, simply by configuring it in advance with `docker login`.
 
 ## Custom implementations
@@ -50,3 +65,4 @@ For the GitHub container registry, the credential helper uses the same token flo
 You can use a different token for `ghcr.io` by setting the `$GHCR_TOKEN` environment variable.
 
 [doc-github]: /docs/providers/github.md
+[lookup_chain]: /docs/lookup_chain.md
