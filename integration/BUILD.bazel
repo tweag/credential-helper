@@ -8,6 +8,7 @@ go_test(
     ],
     data = ["//:tweag-credential-helper"],
     env = {"CREDENTIAL_HELPER_LOGGING": "debug"},
+    tags = ["requires-network"],
     deps = [
         "//api",
         "@rules_go//go/runfiles",

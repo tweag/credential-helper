@@ -3,6 +3,12 @@
 build --deleted_packages=examples/customized,examples/customized/helper/authenticate,examples/customized/helper/cache,examples/customized/helper/helperfactory,examples/full
 query --deleted_packages=examples/customized,examples/customized/helper/authenticate,examples/customized/helper/cache,examples/customized/helper/helperfactory,examples/full
 
+# Disable cgo by default
+build --@rules_go//go/config:pure
+
+# hermeticity
+common --incompatible_strict_action_env
+
 test --test_output=errors
 
 # to make Bazel integration tests work on Windows
