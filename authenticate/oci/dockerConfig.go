@@ -34,7 +34,6 @@ func (a DockerAuthConfig) toAuthConfig() (AuthConfig, error) {
 	} else if a.Auth == "" && a.Username != "" && a.Password != "" {
 		// We need to encode the username and password into the auth field.
 		a.Auth = encodeAuthField(a.Username, a.Password)
-
 	}
 
 	return AuthConfig{
@@ -139,7 +138,7 @@ func authForHost(cfg ConfigFile, host string) (authCfg AuthConfig, found bool, e
 }
 
 func decodeAuthField(authField string) (string, string, error) {
-	decodedAuth, err := base64.RawStdEncoding.DecodeString(authField)
+	decodedAuth, err := base64.StdEncoding.DecodeString(authField)
 	if err != nil {
 		return "", "", err
 	}
@@ -154,7 +153,7 @@ func decodeAuthField(authField string) (string, string, error) {
 
 func encodeAuthField(username, password string) string {
 	auth := username + ":" + password
-	return base64.RawStdEncoding.EncodeToString([]byte(auth))
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
 func dockerCredentialHelperToAuth(helper, host string) (authCfg AuthConfig, found bool, err error) {
