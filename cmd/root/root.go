@@ -80,6 +80,12 @@ func foreground(ctx context.Context, cache api.Cache, helperFactory api.HelperFa
 		logging.Fatalf("%v", err)
 	}
 
+	// The credential helper is often invoked by other tools,
+	// so there is no reliable way to ensure that the stderr
+	// of the credential helper is visible to the user.
+	// Therefore, we log every request to syslog in debug mode.
+	logging.SyslogDebugf(req.URI)
+
 	ctx, authenticator := util.Configure(ctx, helperFactory, configReader, req.URI)
 
 	cacheKey := authenticator.CacheKey(req)
