@@ -1,6 +1,6 @@
 module(
     name = "tweag-credential-helper",
-    version = "0.0.2",
+    version = "0.0.3",
     compatibility_level = 0,
 )
 
@@ -54,11 +54,11 @@ bazel_binaries = use_extension(
     dev_dependency = True,
 )
 bazel_binaries.download(version = "7.1.0")
-bazel_binaries.download(version = "8.1.0")
-use_repo(bazel_binaries, "bazel_binaries", "bazel_binaries_bazelisk", "build_bazel_bazel_7_1_0", "build_bazel_bazel_8_1_0")
+bazel_binaries.download(version = "8.1.1")
+use_repo(bazel_binaries, "bazel_binaries", "bazel_binaries_bazelisk", "build_bazel_bazel_7_1_0", "build_bazel_bazel_8_1_1")
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)
-go_sdk.download(version = "1.24.0")
+go_sdk.download(version = "1.24.1")
 
 module_version = use_extension("//bzl/private/config:defs.bzl", "module_version", dev_dependency = True)
 use_repo(module_version, "tweag-credential-helper-version")

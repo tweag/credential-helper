@@ -4,6 +4,7 @@ build --deleted_packages=examples/customized,examples/customized/helper/authenti
 query --deleted_packages=examples/customized,examples/customized/helper/authenticate,examples/customized/helper/cache,examples/customized/helper/helperfactory,examples/full
 
 test --test_output=errors
+build --@rules_go//go/config:pure
 
 # to make Bazel integration tests work on Windows
 common --enable_runfiles
