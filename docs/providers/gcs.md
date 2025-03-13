@@ -1,10 +1,10 @@
 # Google Cloud Storage (GCS) Authentication
 
-This document explains how to setup your system for authenticating to Google Cloud Storage (GCS) using the credential helper to download objects.
+This document explains how to setup your system for authenticating to Google Cloud Storage (GCS) using the credential helper to download objects, or use a bucket as a HTTP/1.1 remote cache.
 
 ## IAM Setup
 
-In order to access data from a bucket, you need a Google Cloud user- or service account with read access to the objects you want to access (`storage.objects.get`). No other permissions are needed.
+In order to access data from a bucket, you need a Google Cloud user- or service account with read access to the objects you want to access (`storage.objects.get`). No other permissions are needed to download objects.
 Refer to [Google's documentation][gcs-iam] for more information.
 
 
@@ -31,6 +31,12 @@ Add to your `.bazelrc`:
 
 ```
 common --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
+```
+
+Additionally, you can configure a GCS bucket to be a HTTP/1.1 remote cache:
+
+```
+build --remote_cache=https://storage.googleapis.com/my_bucket
 ```
 
 ## Troubleshooting

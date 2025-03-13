@@ -67,8 +67,11 @@ func (g *GCSResolver) Get(ctx context.Context, req api.GetCredentialsRequest) (a
 		return api.GetCredentialsResponse{}, errors.New("only https is supported")
 	}
 
-	if parsedURL.Host != "storage.googleapis.com" {
+	if parsedURL.Hostname() != "storage.googleapis.com" {
 		return api.GetCredentialsResponse{}, errors.New("only storage.googleapis.com is supported")
+	}
+	if parsedURL.Port() != "" && parsedURL.Port() != "443" {
+		return api.GetCredentialsResponse{}, errors.New("only port 443 is supported")
 	}
 
 	token, err := g.tokenSource.Token()
