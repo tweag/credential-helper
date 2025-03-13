@@ -2,7 +2,11 @@ load("@rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "logging",
-    srcs = ["logging.go"],
+    srcs = [
+        "logging.go",
+        "syslog_fallback.go",
+        "syslog_linux.go",
+    ],
     importpath = "github.com/tweag/credential-helper/logging",
     visibility = ["//visibility:public"],
 )
