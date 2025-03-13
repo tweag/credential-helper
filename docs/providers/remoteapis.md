@@ -17,6 +17,7 @@ When using one of the following services, you can directly jump to the matching 
 - [Self-hosted BuildBuddy](#section-buildbuddy-self-hosted)
 - [BuildBarn](#section-buildbarn)
 - [bazel-remote](#section-bazel-remote)
+- [Google Cloud Storage (GCS) bucket as HTTP/1.1 cache](/docs/providers/gcs.md)
 
 
 ## Configuration
