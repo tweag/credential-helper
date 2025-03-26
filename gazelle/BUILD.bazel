@@ -1,0 +1,9 @@
+load("@gazelle//:def.bzl", "gazelle")
+
+gazelle(name = "gazelle")
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)
