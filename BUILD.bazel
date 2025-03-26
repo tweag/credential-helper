@@ -1,4 +1,3 @@
-load("@gazelle//:def.bzl", "gazelle")
 load("@tweag-credential-helper//bzl:defs.bzl", "credential_helper")
 
 credential_helper(
@@ -12,8 +11,6 @@ credential_helper(
 )
 
 # Only development and test targets below
-
-gazelle(name = "gazelle")
 
 filegroup(
     name = "all_files",
