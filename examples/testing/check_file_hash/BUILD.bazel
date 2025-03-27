@@ -1,15 +1,15 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
-    name = "testing_lib",
+    name = "check_file_hash_lib",
     srcs = ["check_file_hash.go"],
-    importpath = "github.com/tweag/credential-helper/examples/testing",
+    importpath = "github.com/tweag/credential-helper/examples/testing/check_file_hash",
     visibility = ["//visibility:private"],
 )
 
 go_binary(
-    name = "testing",
-    embed = [":testing_lib"],
+    name = "check_file_hash",
+    embed = [":check_file_hash_lib"],
     visibility = ["//visibility:public"],
 )
 

@@ -24,7 +24,7 @@ check_file_hash_test = rule(
         "_tool": attr.label(
             executable = True,
             cfg = "target",
-            default = Label(":testing"),
+            default = Label(":check_file_hash"),
         ),
     },
     test = True,

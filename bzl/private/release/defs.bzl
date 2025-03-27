@@ -257,7 +257,6 @@ offline_bundle = rule(
     },
 )
 
-
 def _source_bundle_impl(ctx):
     attributes = {}
     dest_src_map = {}
@@ -373,7 +372,7 @@ def _offline_bcr_impl(ctx):
     name = "{name}",
     version = "{version}",
 )
-""".format(name=bcr_info.module_name, version = bcr_info.version))
+""".format(name = bcr_info.module_name, version = bcr_info.version))
 
     bcr = depset([bcr_tree_artifact])
     output_group_info = {
@@ -382,7 +381,7 @@ def _offline_bcr_impl(ctx):
     }
     return [
         DefaultInfo(files = bcr),
-        OutputGroupInfo(**output_group_info)
+        OutputGroupInfo(**output_group_info),
     ]
 
 offline_bcr = rule(

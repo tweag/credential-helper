@@ -1,0 +1,18 @@
+load("@tweag-credential-helper-testing//analysis:depdends_on.bzl", "depdends_on")
+load("@tweag-credential-helper-testing//analysis:installer_test.bzl", "installer_test_suite")
+
+depdends_on(
+    name = "installer_deps",
+    target = "@tweag-credential-helper//installer",
+)
+
+installer_test_suite(
+    name = "installer_test",
+    target_under_test = ":installer_deps",
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)
