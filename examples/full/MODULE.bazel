@@ -3,6 +3,7 @@ module(
     version = "0.0.0",
 )
 
+# BEGIN BAZEL_DEP
 bazel_dep(
     name = "tweag-credential-helper",
     version = "0.0.0",
@@ -11,15 +12,18 @@ local_path_override(
     module_name = "tweag-credential-helper",
     path = "../..",
 )
+# END BAZEL_DEP
 
-bazel_dep(name = "rules_oci", version = "2.2.2")
-single_version_override(
-    module_name = "rules_oci",
-    patch_strip = 1,
-    patches = ["//:rules_oci.patch"],
+bazel_dep(
+    name = "tweag-credential-helper-testing",
+    version = "0.0.0",
+)
+local_path_override(
+    module_name = "tweag-credential-helper-testing",
+    path = "../testing",
 )
 
-# in integration tests, we do not have prebuilt helper binaries
+# in dev builds, we do not have prebuilt helper binaries
 # for that reason, we register a Go toolchain to build the helper from source
 bazel_dep(name = "rules_go", version = "0.53.0", dev_dependency = True)
 

@@ -1,17 +1,80 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/bazelbuild/rules_go/go/runfiles"
 )
 
 type commandLine struct {
 	name string
 	args []string
+}
+
+func prepareWorkspace(workspaceDir, sourceDir string) error {
+	localBCR, err := runfiles.Rlocation("_main/bzl/private/release/bcr.local")
+	if err != nil {
+		return fmt.Errorf("failed to find local bcr: %v", err)
+	}
+	distdir, err := runfiles.Rlocation("_main/bzl/private/release/airgapped.distdir")
+	if err != nil {
+		return fmt.Errorf("failed to find distdir: %v", err)
+	}
+	bazelDepOverride, err := runfiles.Rlocation("_main/bzl/private/release/bcr_local_module_tweag-credential-helper.bazel_dep")
+	if err != nil {
+		return fmt.Errorf("failed to find bazel dep override: %v", err)
+	}
+	if err := copyFSWithSymlinks(workspaceDir, sourceDir); err != nil {
+		return fmt.Errorf("failed to copy source dir: %v", err)
+	}
+
+	// replace parts of MODULE.bazel with dep override:
+	// anything between the markers is replaced
+	// with the contents of the dep override file
+	moduleFile := filepath.Join(workspaceDir, "MODULE.bazel")
+	moduleData, err := os.ReadFile(moduleFile)
+	if err != nil {
+		return fmt.Errorf("failed to read module file: %v", err)
+	}
+	depData, err := os.ReadFile(bazelDepOverride)
+	if err != nil {
+		return fmt.Errorf("failed to read dep override file: %v", err)
+	}
+	startMarker := "# BEGIN BAZEL_DEP"
+	endMarker := "# END BAZEL_DEP"
+	startIndex := strings.Index(string(moduleData), startMarker)
+	endIndex := strings.Index(string(moduleData), endMarker)
+	if startIndex == -1 || endIndex == -1 {
+		return fmt.Errorf("failed to find markers in module file")
+	}
+
+	patchedModuleData := bytes.NewBuffer(nil)
+	patchedModuleData.Write(moduleData[:startIndex])
+	patchedModuleData.Write(depData)
+	patchedModuleData.Write(moduleData[endIndex+len(endMarker):])
+	os.Remove(moduleFile)
+	if err := os.WriteFile(moduleFile, patchedModuleData.Bytes(), 0o644); err != nil {
+		return fmt.Errorf("failed to write patched module file: %v", err)
+	}
+	localBCRUrlPath := filepath.ToSlash(localBCR)
+	if runtime.GOOS == "windows" {
+		localBCRUrlPath = "file:///" + localBCRUrlPath
+	} else {
+		localBCRUrlPath = "file://" + localBCRUrlPath
+	}
+
+	bazelrc := fmt.Sprintf(`common --registry=%s --registry=https://bcr.bazel.build/
+common --distdir=%s
+`, localBCRUrlPath, filepath.ToSlash(distdir))
+	return os.WriteFile(filepath.Join(workspaceDir, ".bazelrc.user"), []byte(bazelrc), 0o644)
 }
 
 func outputUserRoot() (string, func() error) {
@@ -50,6 +113,10 @@ func bazelCommands(bazel string, startupFlags []string) (setup []commandLine, te
 
 	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"info"}, startupFlags))
 	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"run", installerTarget()}, startupFlags))
+	// Test that the prebuilt helper are correctly installed and available for use
+	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"cquery", "--@tweag-credential-helper//bzl/config:helper_build_mode=auto", `somepath(@tweag-credential-helper//installer, @tweag-credential-helper)`}, startupFlags))
+	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"cquery", "--@tweag-credential-helper//bzl/config:helper_build_mode=from_source", `somepath(@tweag-credential-helper//installer, @tweag-credential-helper)`}, startupFlags))
+	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"cquery", "--@tweag-credential-helper//bzl/config:helper_build_mode=prebuilt", `somepath(@tweag-credential-helper//installer, @tweag-credential-helper)`}, startupFlags))
 	// shutdown Bazel after install to ensure
 	// any failed fetches are retried with a helper in place
 	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"shutdown"}, startupFlags))
@@ -80,6 +147,7 @@ func runBazelCommands(bazel, helper, workspaceDir string) error {
 	}()
 
 	for _, command := range setupCommands {
+		fmt.Printf("\nrunning setup command $ bazel %s\n", strings.Join(command.args, " "))
 		cmd := exec.Command(command.name, command.args...)
 		cmd.Dir = workspaceDir
 		cmd.Stdout = os.Stdout
@@ -102,6 +170,7 @@ func runBazelCommands(bazel, helper, workspaceDir string) error {
 	defer agentCmd.Wait()
 	defer agentCmd.Process.Kill()
 
+	fmt.Println("\nrunning tests")
 	for _, command := range testCommands {
 		cmd := exec.Command(command.name, command.args...)
 		cmd.Dir = workspaceDir
@@ -131,9 +200,62 @@ func absolutifyEnvVars() error {
 	return nil
 }
 
+func copyFSWithSymlinks(destination, source string) error {
+	canonicalBase := filepath.Clean(source)
+	return filepath.Walk(source, func(path string, currentInfo os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		canoncialPath := filepath.Clean(path)
+		relativePath, err := filepath.Rel(canonicalBase, canoncialPath)
+		if err != nil {
+			return err
+		}
+
+		newPath := filepath.Join(destination, relativePath)
+		if currentInfo.IsDir() {
+			return os.MkdirAll(newPath, 0o777)
+		}
+
+		if currentInfo.Mode()&fs.ModeSymlink != 0 {
+			target, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+			return os.Symlink(target, newPath)
+		}
+
+		if !currentInfo.Mode().IsRegular() {
+			return &os.PathError{Op: "CopyFS", Path: path, Err: os.ErrInvalid}
+		}
+
+		r, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer r.Close()
+		info, err := r.Stat()
+		if err != nil {
+			return err
+		}
+		w, err := os.OpenFile(newPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o666|info.Mode()&0o777)
+		if err != nil {
+			return err
+		}
+
+		if _, err := io.Copy(w, r); err != nil {
+			w.Close()
+			return &os.PathError{Op: "Copy", Path: newPath, Err: err}
+		}
+		return w.Close()
+	})
+}
+
 func main() {
 	bazel := os.Getenv("BIT_BAZEL_BINARY")
-	workspaceDir := os.Getenv("BIT_WORKSPACE_DIR")
+	workspaceDir := os.Getenv("BIT_WORKSPACE_DIR") + ".scratch"
+	defer os.RemoveAll(workspaceDir)
 	helper := filepath.Join(workspaceDir, "tools", "credential-helper")
 	if runtime.GOOS == "windows" {
 		helper += ".exe"
@@ -144,6 +266,11 @@ func main() {
 	}
 
 	var failed bool
+
+	if err := prepareWorkspace(workspaceDir, os.Getenv("BIT_WORKSPACE_DIR")); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
 
 	integrationTestErr := runBazelCommands(bazel, helper, workspaceDir)
 	if integrationTestErr != nil {

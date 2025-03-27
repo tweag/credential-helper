@@ -42,7 +42,6 @@ dev_files = [
     "//bzl/private/lockfile:all_files",
     "//bzl/private/release:all_files",
     "//examples:all_files",
-    "//examples/testing:all_files",
     "//gazelle:all_files",
 ]
 
