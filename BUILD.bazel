@@ -28,6 +28,7 @@ filegroup(
 )
 
 exports_files([
+    ".bcr/metadata.template.json",
     "prebuilt_lockfile.json",
     "tools/credential-helper",
 ])

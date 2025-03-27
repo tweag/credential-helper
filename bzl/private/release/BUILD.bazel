@@ -1,5 +1,5 @@
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load(":defs.bzl", "PLATFORMS", "do_a_release", "go_to_constraint_value", "release_files", "release_platform_flag", "source_bundle", "versioned_filename_info", name = "platform_name")
+load(":defs.bzl", "PLATFORMS", "do_a_release", "go_to_constraint_value", "offline_bcr", "offline_bundle", "release_files", "release_platform_flag", "source_bundle", "versioned_filename_info", name = "platform_name")
 
 package(
     default_visibility = ["//visibility:public"],
@@ -26,6 +26,11 @@ release_files(
     tags = ["manual"],
 )
 
+offline_bundle(
+    name = "airgapped",
+    distdir_contents = ":release",
+)
+
 source_bundle(
     name = "srcs",
     srcs = ["//bzl/private/source_files:release_src_files"],
@@ -36,8 +41,8 @@ source_bundle(
 pkg_tar(
     name = "src_tar",
     srcs = [":srcs"],
-    out = "tweag-credential-helper.tar.xz",
-    extension = "tar.xz",
+    out = "tweag-credential-helper.tar.gz",
+    extension = "tar.gz",
     # TODO: mode should come from
     # attributes in `SourceFilesInfo`,
     # but doesn't for some reason.
@@ -48,9 +53,14 @@ pkg_tar(
 versioned_filename_info(
     name = "versioned_src_tar",
     src = ":src_tar",
-    extension = "tar.xz",
+    extension = "tar.gz",
     tags = ["manual"],
     destdir = "src",
+)
+
+offline_bcr(
+    name = "bcr",
+    src_tar = ":versioned_src_tar",
 )
 
 pkg_tar(

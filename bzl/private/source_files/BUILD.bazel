@@ -36,6 +36,8 @@ release_files = [
 ]
 
 dev_files = [
+    "//bzl/private/bcr:all_files",
+    "//bzl/private/distdir:all_files",
     "//bzl/private/integration_test_runner:all_files",
     "//bzl/private/lockfile:all_files",
     "//bzl/private/release:all_files",

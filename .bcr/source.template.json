@@ -1,4 +1,4 @@
 {
     "integrity": "",
-    "url": "https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/tweag-credential-helper-{TAG}.tar.xz"
+    "url": "https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/tweag-credential-helper-{TAG}.tar.gz"
 }
