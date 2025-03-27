@@ -118,6 +118,25 @@ Sources are represented by bazel `File` structures.""",
     },
 )
 
+OfflineBuildDistdirInfo = provider(
+    doc = """Provider representing the contents of a Bazel "--distdir".""",
+    fields = {
+        "basename_file_map": """Map of basename to File""",
+        "files": "Depset of File whose basename shall be used as-is",
+    },
+)
+
+BCRModuleVersionInfo = provider(
+    doc = """Provider representing a version of a BCR module.""",
+    fields = {
+        "module_name": "Name of the module",
+        "version": "The module version",
+        "source_archive": "An archive File containing the module source",
+        "source_archive_basename": "A basename for the source archive",
+        "metadata_template": "A File containing a base template for metadata.json",
+    },
+)
+
 def _release_files(ctx):
     output_group_info = {}
     version = ctx.attr.version[ModuleVersionInfo].version
@@ -134,6 +153,7 @@ def _release_files(ctx):
     attributes = {
         "tools/credential-helper.sh": EXECUTABLE_ATTRIBUTES,
     }
+    distdir_contents = {}
     for platform in _platform_names:
         src = ctx.split_attr.executable[platform]
         executable = src[DefaultInfo].files_to_run.executable
@@ -143,9 +163,11 @@ def _release_files(ctx):
         dot_extension = ""
         if len(executable.extension) > 0 and not basename.endswith("." + executable.extension):
             dot_extension = "." + executable.extension
-        filename = "bin/%s_%s%s" % (basename, platform, dot_extension)
+        filename_basename = "%s_%s%s" % (basename, platform, dot_extension)
+        filename = "bin/" + filename_basename
         dest_src_map[filename] = executable
         attributes[filename] = EXECUTABLE_ATTRIBUTES
+        distdir_contents[filename_basename] = executable
         output_group_info["%s_files" % platform] = depset([executable])
         lockfile_args.add("--helper", "%s=%s" % (platform, executable.path))
     lockfile = ctx.actions.declare_file("%s_lockfile.json" % ctx.attr.name)
@@ -165,6 +187,10 @@ def _release_files(ctx):
         OverrideSourceFilesInfo(
             attributes = {"prebuilt_lockfile.json": DEFAULT_ATTRIBUTES},
             dest_src_map = {"prebuilt_lockfile.json": lockfile},
+        ),
+        OfflineBuildDistdirInfo(
+            basename_file_map = distdir_contents,
+            files = depset(),
         ),
     ]
 
@@ -191,6 +217,46 @@ release_files = rule(
         ),
     },
 )
+
+def _offline_bundle_impl(ctx):
+    mapped_contents = ctx.attr.distdir_contents[OfflineBuildDistdirInfo].basename_file_map
+    extra_files = ctx.attr.distdir_contents[OfflineBuildDistdirInfo].files
+    contents = {}
+    for f in extra_files.to_list():
+        contents[f.basename] = f
+    for basename, f in mapped_contents.items():
+        contents[basename] = f
+
+    distdir_args = ctx.actions.args()
+    for basename, f in contents.items():
+        distdir_args.add("--file", "%s=%s" % (basename, f.path))
+
+    distdir_tree_artifact = ctx.actions.declare_directory(ctx.attr.name + ".distdir")
+    distdir_args.add(distdir_tree_artifact.path)
+    ctx.actions.run(
+        outputs = [distdir_tree_artifact],
+        inputs = contents.values(),
+        executable = ctx.executable.distdir_generator,
+        arguments = [distdir_args],
+    )
+
+    return [DefaultInfo(files = depset([distdir_tree_artifact]))]
+
+offline_bundle = rule(
+    implementation = _offline_bundle_impl,
+    attrs = {
+        "distdir_contents": attr.label(
+            providers = [OfflineBuildDistdirInfo],
+            mandatory = True,
+        ),
+        "distdir_generator": attr.label(
+            executable = True,
+            default = Label("//bzl/private/distdir"),
+            cfg = "exec",
+        ),
+    },
+)
+
 
 def _source_bundle_impl(ctx):
     attributes = {}
@@ -238,10 +304,27 @@ def _versioned_filename_info_impl(ctx):
         path = path,
         version = ctx.attr.version[ModuleVersionInfo].version,
     )
+    dest_basename = ctx.attr.path_template.format(
+        basename = basename,
+        destdir = "",
+        slash = "",
+        extension = extension,
+        dot = dot,
+        stem = stem,
+        path = path,
+        version = ctx.attr.version[ModuleVersionInfo].version,
+    )
     dest_src_map = {dest: file}
     return [
         DefaultInfo(files = depset(dest_src_map.values())),
         PackageFilesInfo(attributes = {dest: ctx.attr.attributes}, dest_src_map = dest_src_map),
+        BCRModuleVersionInfo(
+            module_name = "tweag-credential-helper",
+            version = ctx.attr.version[ModuleVersionInfo].version,
+            source_archive = ctx.file.src,
+            source_archive_basename = dest_basename,
+            metadata_template = ctx.file._metadata_template,
+        ),
     ]
 
 versioned_filename_info = rule(
@@ -255,6 +338,64 @@ versioned_filename_info = rule(
         "version": attr.label(
             default = "@tweag-credential-helper-version",
             providers = [ModuleVersionInfo],
+        ),
+        "_metadata_template": attr.label(
+            allow_single_file = True,
+            default = "//:.bcr/metadata.template.json",
+        ),
+    },
+)
+
+def _offline_bcr_impl(ctx):
+    bcr_info = ctx.attr.src_tar[BCRModuleVersionInfo]
+    request = {
+        "module_name": bcr_info.module_name,
+        "version": bcr_info.version,
+        "source_path": bcr_info.source_archive.path,
+        "override_source_basename": bcr_info.source_archive_basename,
+        "metadata_template_path": bcr_info.metadata_template.path,
+    }
+    request_file = ctx.actions.declare_file(ctx.attr.name + "_local_module_" + bcr_info.module_name + ".json")
+    ctx.actions.write(request_file, content = json.encode(request))
+    bcr_args = ctx.actions.args()
+    bcr_args.add("--add-local-module", request_file.path)
+    bcr_tree_artifact = ctx.actions.declare_directory(ctx.attr.name + ".local")
+    bcr_args.add(bcr_tree_artifact.path)
+    ctx.actions.run(
+        outputs = [bcr_tree_artifact],
+        inputs = [request_file, bcr_info.source_archive, bcr_info.metadata_template],
+        executable = ctx.executable.bcr_generator,
+        arguments = [bcr_args],
+    )
+
+    bazel_dep = ctx.actions.declare_file(ctx.attr.name + "_local_module_" + bcr_info.module_name + ".bazel_dep")
+    ctx.actions.write(bazel_dep, content = """bazel_dep(
+    name = "{name}",
+    version = "{version}",
+)
+""".format(name=bcr_info.module_name, version = bcr_info.version))
+
+    bcr = depset([bcr_tree_artifact])
+    output_group_info = {
+        "bcr": bcr,
+        bcr_info.module_name: depset([bazel_dep]),
+    }
+    return [
+        DefaultInfo(files = bcr),
+        OutputGroupInfo(**output_group_info)
+    ]
+
+offline_bcr = rule(
+    implementation = _offline_bcr_impl,
+    attrs = {
+        "src_tar": attr.label(
+            providers = [BCRModuleVersionInfo],
+            mandatory = True,
+        ),
+        "bcr_generator": attr.label(
+            executable = True,
+            default = Label("//bzl/private/bcr"),
+            cfg = "exec",
         ),
     },
 )
