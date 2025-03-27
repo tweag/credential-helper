@@ -30,7 +30,7 @@ In `.tweag-credential-helper.json`, you can use the following secret bindings fo
 ### Usage with rules_oci
 
 `rules_oci` tries to perform its own credential handling, but can be configured to use a credential helper instead.
-Set the following in your `.bazelrc`: `common --repo_env=OCI_DISABLE_GET_TOKEN=1` to let the credential helper inject authentication headers.
+Set the following in your `.bazelrc`: `common --repo_env=OCI_GET_TOKEN_ALLOW_FAIL=1` to let the credential helper inject authentication headers.
 
 ## Default set of allowed registries
 
