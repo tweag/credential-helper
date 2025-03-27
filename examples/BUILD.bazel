@@ -27,8 +27,8 @@ bazel_integration_tests(
     bazel_versions = bazel_binaries.versions.all,
     env = {"CREDENTIAL_HELPER_LOGGING": "debug"},
     test_runner = "//bzl/private/integration_test_runner",
-    workspace_files = integration_test_utils.glob_workspace_files("full") + [
-        "//examples/testing:all_files",
+    workspace_files = integration_test_utils.glob_workspace_files("full") +
+                      integration_test_utils.glob_workspace_files("testing") + [
         "//bzl/private/source_files:release_src_files",
     ],
     workspace_path = "full",
@@ -44,8 +44,8 @@ bazel_integration_tests(
         "BAZEL_INTEGRATION_TEST_INSTALL_TARGET": "//:custom_installer",
     },
     test_runner = "//bzl/private/integration_test_runner",
-    workspace_files = integration_test_utils.glob_workspace_files("customized") + [
-        "//examples/testing:all_files",
+    workspace_files = integration_test_utils.glob_workspace_files("customized") +
+                      integration_test_utils.glob_workspace_files("testing") + [
         "//bzl/private/source_files:release_src_files",
     ],
     workspace_path = "customized",

@@ -1,6 +1,6 @@
 load("@gazelle//:def.bzl", "gazelle")
 load("@tweag-credential-helper//bzl:defs.bzl", "credential_helper", "installer")
-load("@tweag-credential-helper//examples/testing:defs.bzl", "check_file_hash_test")
+load("@tweag-credential-helper-testing//:defs.bzl", "check_file_hash_test")
 
 gazelle(name = "gazelle")
 

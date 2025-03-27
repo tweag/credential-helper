@@ -1,4 +1,4 @@
-load("@tweag-credential-helper//examples/testing:defs.bzl", "check_file_hash_test")
+load("@tweag-credential-helper-testing//:defs.bzl", "check_file_hash_test")
 
 check_file_hash_test(
     name = "check_github_repo",
