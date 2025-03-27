@@ -19,29 +19,62 @@ prebuilt_helper_info = rule(
     provides = [PrebuiltHelperInfo],
 )
 
+def _java_os_to_go_os(os):
+    if os in ["osx", "Mac OS X", "darwin", "Darwin"]:
+        return "darwin"
+    if os.startswith("Windows"):
+        return "windows"
+    if os.startswith("Linux"):
+        return "linux"
+    return os
+
+def _java_arch_to_go_arch(arch):
+    if arch in ["i386", "i486", "i586", "i686", "i786", "x86"]:
+        return "386"
+    if arch in ["amd64", "x86_64", "x64"]:
+        return "amd64"
+    if arch in ["aarch64", "arm64"]:
+        return "arm64"
+    # Some arches can be converted as-is, inlcuding
+    # "ppc", "ppc64", "ppc64le", "s390x", "s390"
+    return arch
+
 def _prebuilt_collection_hub_repo_impl(rctx):
     select_arms = {"@rules_go//go/platform:" + k: v for (k, v) in rctx.attr.helpers.items()}
     select_arms |= {"//conditions:default": None}
     helper_rhs = "select({})".format(json.encode_indent(select_arms, prefix = "    ", indent = "    "))
     helper_rhs = helper_rhs.replace("null", "None")
+    host_os_cpu = _java_os_to_go_os(rctx.os.name) + "_" + _java_arch_to_go_arch(rctx.os.arch)
+    helper_available = host_os_cpu in rctx.attr.helpers.keys()
+    availability_rhs = repr(helper_available)
     if len(rctx.attr.helpers) == 0:
         # empty select is illegal, replace with explicit None
         helper_rhs = "None"
     rctx.file(
         "BUILD.bazel",
-        """load("@tweag-credential-helper//bzl/private/prebuilt:prebuilt.bzl", "prebuilt_helper_info")
+        """
+load("@bazel_skylib//rules:common_settings.bzl", "bool_setting")
+load("@tweag-credential-helper//bzl/private/prebuilt:prebuilt.bzl", "prebuilt_helper_info")
 
 prebuilt_helper_info(
     name = "prebuilt_helper_info",
     helper = {},
     visibility = ["//visibility:public"],
 )
-""".format(helper_rhs),
+
+bool_setting(
+    name = "prebuilt_available",
+    build_setting_default = {},
+    visibility = ["//visibility:public"],
+)
+""".format(helper_rhs, availability_rhs),
     )
 
 prebuilt_collection_hub_repo = repository_rule(
     implementation = _prebuilt_collection_hub_repo_impl,
-    attrs = {"helpers": attr.string_dict()},
+    attrs = {
+        "helpers": attr.string_dict(),
+    },
 )
 
 def _prebuilt_credential_helper_repo_impl(rctx):

@@ -32,6 +32,28 @@ string_flag(
     visibility = ["//visibility:public"],
 )
 
+config_setting(
+    name = "helper_build_mode_prebuilt",
+    flag_values = {
+        ":helper_build_mode": "prebuilt",
+    },
+)
+
+config_setting(
+    name = "helper_build_from_source",
+    flag_values = {
+        ":helper_build_mode": "from_source",
+    },
+)
+
+config_setting(
+    name = "helper_build_mode_auto_with_prebuilt_available",
+    flag_values = {
+        ":helper_build_mode": "auto",
+        "@tweag-credential-helper-prebuilt//:prebuilt_available": "1",
+    },
+)
+
 filegroup(
     name = "all_files",
     srcs = glob(["*"]),
