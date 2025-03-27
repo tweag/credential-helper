@@ -35,6 +35,7 @@ def _java_arch_to_go_arch(arch):
         return "amd64"
     if arch in ["aarch64", "arm64"]:
         return "arm64"
+
     # Some arches can be converted as-is, inlcuding
     # "ppc", "ppc64", "ppc64le", "s390x", "s390"
     return arch

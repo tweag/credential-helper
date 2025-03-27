@@ -13,7 +13,7 @@ installer(
         "//conditions:default": "@tweag-credential-helper",
     }),
     prebuilt_helper = "@tweag-credential-helper-prebuilt//:prebuilt_helper_info",
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(

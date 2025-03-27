@@ -2,4 +2,13 @@ module(
     name = "tweag-credential-helper-testing",
 )
 
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_go", version = "0.53.0")
+bazel_dep(
+    name = "tweag-credential-helper",
+    version = "0.0.3",
+)
+local_path_override(
+    module_name = "tweag-credential-helper",
+    path = "../..",
+)
