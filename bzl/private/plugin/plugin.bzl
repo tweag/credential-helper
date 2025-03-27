@@ -157,14 +157,13 @@ installer = rule(
             doc = "The binary to install",
             executable = True,
             cfg = "target",
-            default = Label("@tweag-credential-helper"),
         ),
         "prebuilt_helper": attr.label(
             mandatory = False,
             providers = [PrebuiltHelperInfo],
         ),
         "destination_unix": attr.string(
-            doc = """Install destination used on Unix. Can use prefixes like %workspace% to use workspace-relative destinations. 
+            doc = """Install destination used on Unix. Can use prefixes like %workspace% to use workspace-relative destinations.
             If unset, destination is set to @tweag-credential-helper//bzl/config:default_install_destination_unix.
             If both are unset, destination is set to well-known helper workdir that is targeted by shell wrapper.""",
             mandatory = False,

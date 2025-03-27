@@ -2,8 +2,18 @@ load("@tweag-credential-helper//bzl:defs.bzl", "installer")
 
 installer(
     name = "installer",
-    credential_helper = "@tweag-credential-helper",
+    credential_helper = select({
+        "//bzl/config:helper_build_mode_prebuilt": None,
+        "//bzl/config:helper_build_from_source": "@tweag-credential-helper",
+        # We are in auto mode and a prebuilt is available
+        # so we don't need to analyze the go_binary (source target)
+        "//bzl/config:helper_build_mode_auto_with_prebuilt_available": None,
+        # We are in auto mode and a prebuilt is not available.
+        # Fall back to building from source (go_binary).
+        "//conditions:default": "@tweag-credential-helper",
+    }),
     prebuilt_helper = "@tweag-credential-helper-prebuilt//:prebuilt_helper_info",
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
