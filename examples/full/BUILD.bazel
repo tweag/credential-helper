@@ -19,6 +19,24 @@ check_file_hash_test(
 )
 
 check_file_hash_test(
+    name = "s3_regional_virtual_host_style",
+    args = [
+        "$(location @s3_regional_virtual_host_style//file)",
+        "e879f76b7bac8effe4cc53bce034f258ce15b2825f3018c7078f25e832c3feb8",
+    ],
+    data = ["@s3_regional_virtual_host_style//file"],
+)
+
+check_file_hash_test(
+    name = "s3_regional_path_style",
+    args = [
+        "$(location @s3_regional_path_style//file)",
+        "909b62c80b5ce1f5075c9c9301f79673727a77c46a525f12c4753370536bfe2c",
+    ],
+    data = ["@s3_regional_path_style//file"],
+)
+
+check_file_hash_test(
     name = "check_r2",
     args = [
         "$(location @hello_world_r2//file)",
