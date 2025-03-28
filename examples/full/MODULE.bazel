@@ -47,6 +47,18 @@ http_file(
 )
 
 http_file(
+    name = "s3_regional_virtual_host_style",
+    integrity = "sha256-6Hn3a3usjv/kzFO84DTyWM4VsoJfMBjHB48l6DLD/rg=",
+    urls = ["https://malte-s3-public-test.s3.eu-north-1.amazonaws.com/release/v1.30.2/release-notes.json"],
+)
+
+http_file(
+    name = "s3_regional_path_style",
+    integrity = "sha256-kJtiyAtc4fUHXJyTAfeWc3J6d8RqUl8SxHUzcFNr/iw=",
+    urls = ["https://s3.eu-north-1.amazonaws.com/malte-s3-public-test/release/v1.30.3/release-notes.json"],
+)
+
+http_file(
     name = "hello_world_r2",
     integrity = "sha256-30vzSs1zKPpvC2kT3MVrRQtoiKVicYyL+XDpuWhRFPU=",
     urls = ["https://47ffb5f0a156e14a0985028c836501e2.r2.cloudflarestorage.com/r2-private-example/hello_world"],
