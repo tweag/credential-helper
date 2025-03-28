@@ -20,11 +20,12 @@ prebuilt_helper_info = rule(
 )
 
 def _java_os_to_go_os(os):
-    if os in ["osx", "Mac OS X", "darwin", "Darwin"]:
+    os = os.lower()
+    if os in ["osx", "mac os x", "darwin"]:
         return "darwin"
-    if os.startswith("Windows"):
+    if os.startswith("windows"):
         return "windows"
-    if os.startswith("Linux"):
+    if os.startswith("linux"):
         return "linux"
     return os
 
