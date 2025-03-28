@@ -14,3 +14,5 @@ common:unix --credential_helper=httpbin.org=%workspace%/tools/credential-helper
 
 # credential helpers for Windows
 common:windows --credential_helper=httpbin.org=%workspace%/tools/credential-helper.exe
+
+try-import %workspace%/.bazelrc.user

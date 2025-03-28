@@ -74,7 +74,7 @@ func prepareWorkspace(workspaceDir, sourceDir string) error {
 	bazelrc := fmt.Sprintf(`common --registry=%s --registry=https://bcr.bazel.build/
 common --distdir=%s
 `, localBCRUrlPath, filepath.ToSlash(distdir))
-	return os.WriteFile(filepath.Join(workspaceDir, ".bazelrc.user"), []byte(bazelrc), 0o644)
+	return os.WriteFile(filepath.Join(workspaceDir, ".bazelrc.generated"), []byte(bazelrc), 0o644)
 }
 
 func outputUserRoot() (string, func() error) {
@@ -132,6 +132,8 @@ func runBazelCommands(bazel, helper, workspaceDir string) error {
 	if len(root) > 0 {
 		startupFlags = append(startupFlags, "--output_user_root="+root)
 	}
+	startupFlags = append(startupFlags, "--bazelrc="+filepath.Join(".bazelrc"))
+	startupFlags = append(startupFlags, "--bazelrc="+filepath.Join(".bazelrc.generated"))
 
 	setupCommands, testCommands, shutdownCommands := bazelCommands(bazel, startupFlags)
 
