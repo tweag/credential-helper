@@ -212,7 +212,10 @@ func (s *S3Resolver) Get(ctx context.Context, req api.GetCredentialsRequest) (ap
 
 	ts := time.Now().UTC()
 
-	if err := s.signer.SignHTTP(ctx, cred, &httpReq, emptySHA256, "s3", cfg.Region, ts); err != nil {
+	if len(region) == 0 {
+		logging.Debugf("S3 request signer uses empty region - this may fail")
+	}
+	if err := s.signer.SignHTTP(ctx, cred, &httpReq, emptySHA256, "s3", region, ts); err != nil {
 		return api.GetCredentialsResponse{}, err
 	}
 
@@ -228,39 +231,48 @@ func regionFromHost(host string) string {
 		return "auto"
 	}
 
-	// AWS S3
-	if host == "s3.amazonaws.com" {
-		return "us-east-1"
+	if !strings.HasSuffix(host, ".amazonaws.com") {
+		// not an AWS S3 endpoint
+		// we shouldn't guess the region
+		logging.Debugf("S3-compatible endpoint %s doesn't have a well-known provider - skipping region autodetection", host)
+		return ""
 	}
 
-	if strings.HasPrefix(host, "s3.") && strings.HasSuffix(host, ".amazonaws.com") {
+	// legacy global endpoint
+	if region, ok := awsLegacyGlobalRegion(host); ok {
+		return region
+	}
+
+	host = strings.TrimSuffix(host, ".amazonaws.com")
+
+	if strings.HasPrefix(host, "s3.") {
 		// path-style url
 		// s3.<region>.amazonaws.com
 		parts := strings.Split(host, ".")
-		if len(parts) != 4 {
+		if len(parts) != 2 {
 			return ""
 		}
 		return parts[1]
 	}
 
-	if !strings.HasSuffix(host, ".s3.amazonaws.com") {
-		return ""
-	}
-	host = strings.TrimSuffix(host, ".s3.amazonaws.com")
-
 	parts := strings.Split(host, ".")
-	switch len(parts) {
-	case 1:
+	if len(parts) == 3 {
 		// virtual-hosted-style url
-		// <bucket>.s3.amazonaws.com
-		return "us-east-1"
-	case 2:
-		// virtual-hosted-style url
-		// <bucket>.<region>.s3.amazonaws.com
-		return parts[1]
+		// <bucket>.s3.<region>.amazonaws.com
+		return parts[2]
 	}
 
 	return ""
+}
+
+func awsLegacyGlobalRegion(host string) (string, bool) {
+	if host == "s3.amazonaws.com" {
+		return "us-east-1", true
+	}
+	if strings.HasSuffix(host, ".s3.amazonaws.com") {
+		return "us-east-1", true
+	}
+	return "", false
 }
 
 type S3Provider int
