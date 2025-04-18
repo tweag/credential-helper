@@ -22,12 +22,17 @@ import (
 	"github.com/tweag/credential-helper/logging"
 )
 
+// the value of this variable is intended to be substituted with the actual tool
+// version using the linker's stamping feature (i.e., using a `-X` argument)
+var version = "0.0.0"
+
 const usage = `Usage: credential-helper [COMMAND] [ARGS...]
 
 Commands:
   get            get credentials in the form of http headers for the uri provided on stdin and print result to stdout (see https://github.com/EngFlow/credential-helper-spec for more information)
   setup-uri      prints setup instructions for a given uri
-  setup-keyring  stores a secret in the system keyring`
+  setup-keyring  stores a secret in the system keyring
+  version        displays the version of this tool`
 
 func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewCache, args []string) {
 	setLogLevel()
@@ -65,6 +70,8 @@ func Run(ctx context.Context, helperFactory api.HelperFactory, newCache api.NewC
 		clientCommandProcess(args[2], os.Stdin)
 	case "installer-install":
 		installer.InstallerProcess()
+	case "version":
+		fmt.Println(version)
 	default:
 		logging.Fatalf("unknown command")
 	}

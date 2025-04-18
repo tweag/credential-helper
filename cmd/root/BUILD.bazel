@@ -5,6 +5,7 @@ go_library(
     srcs = ["root.go"],
     importpath = "github.com/tweag/credential-helper/cmd/root",
     visibility = ["//visibility:public"],
+    x_defs = {"version": module_version()},
     deps = [
         "//agent",
         "//agent/locate",
