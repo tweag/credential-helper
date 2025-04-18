@@ -6,8 +6,8 @@ module(
 
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
-bazel_dep(name = "rules_go", version = "0.53.0")
-bazel_dep(name = "gazelle", version = "0.42.0")
+bazel_dep(name = "rules_go", version = "0.54.0")
+bazel_dep(name = "gazelle", version = "0.43.0")
 
 go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
@@ -54,11 +54,11 @@ bazel_binaries = use_extension(
     dev_dependency = True,
 )
 bazel_binaries.download(version = "7.1.0")
-bazel_binaries.download(version = "8.1.1")
-use_repo(bazel_binaries, "bazel_binaries", "bazel_binaries_bazelisk", "build_bazel_bazel_7_1_0", "build_bazel_bazel_8_1_1")
+bazel_binaries.download(version = "8.2.1")
+use_repo(bazel_binaries, "bazel_binaries", "bazel_binaries_bazelisk", "build_bazel_bazel_7_1_0", "build_bazel_bazel_8_2_1")
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)
-go_sdk.download(version = "1.24.1")
+go_sdk.download(version = "1.24.2")
 
 module_version = use_extension("//bzl/private/config:defs.bzl", "module_version", dev_dependency = True)
 use_repo(module_version, "tweag-credential-helper-version")
