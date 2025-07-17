@@ -59,8 +59,12 @@ The following providers are supported as of today:
 
 ## Installation and usage
 
+<a href="https://repology.org/project/tweag-credential-helper/versions">
+    <img align="right" src="https://repology.org/badge/vertical-allrepos/tweag-credential-helper.svg?exclude_sources=site&exclude_unsupported=1" alt="Packaging status">
+</a>
+
 You can either manually install a binary of the credential helper on your system (into `$PATH` or to a well-known absolute path) or use the Bazel module.
-Prebuilt artifacts can be found in the [GitHub releases][releases].
+Prebuilt artifacts can be found in the [GitHub releases][releases] and on [nixpkgs][nixpkgs].
 If you want to manually install the helper, skip ahead to the [configuration](#configuration) after installing the binary yourself.
 
 Add the following to your `MODULE.bazel` if you want to perform the recommended installation.
@@ -327,3 +331,4 @@ The agent does not implement additional countermeasures. Consequently, access to
 [plugins]: /docs/plugins.md
 [bcr]: https://registry.bazel.build/modules/tweag-credential-helper
 [lookup_chain]: /docs/lookup_chain.md
+[nixpkgs]: https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/tw/tweag-credential-helper/package.nix
