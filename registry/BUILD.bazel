@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//api",
         "//authenticate/gcs",
+        "//authenticate/gar",
         "//authenticate/github",
         "//authenticate/null",
         "//authenticate/oci",
