@@ -29,13 +29,13 @@ bazel_dep(name = "rules_go", version = "0.54.0", dev_dependency = True)
 bazel_dep(name = "rules_python", version = "1.5.1")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
-python.toolchain(python_version = "3.13")
+python.toolchain(python_version = "3.11")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
     experimental_index_url = "https://oauth2accesstoken@europe-west8-python.pkg.dev/git-credential-helper-dev/python-test-repository/simple",
     hub_name = "pypi",
-    python_version = "3.13",
+    python_version = "3.11",
     quiet = False,
     requirements_lock = "//:python/requirements.txt",
 )
