@@ -2,6 +2,7 @@ package registry
 
 import (
 	"github.com/tweag/credential-helper/api"
+	authenticateGAR "github.com/tweag/credential-helper/authenticate/gar"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
@@ -13,6 +14,7 @@ import (
 var singleton = Helpers{
 	Map: map[string]api.Helper{
 		"gcs":        &authenticateGCS.GCS{},
+		"gar":        &authenticateGAR.GAR{},
 		"github":     &authenticateGitHub.GitHub{},
 		"null":       &authenticateNull.Null{},
 		"oci":        authenticateOCI.NewFallbackOCI(),
