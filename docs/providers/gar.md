@@ -64,6 +64,10 @@ pip.parse(
 )
 ```
 
+Related issues:
+- https://github.com/bazel-contrib/rules_python/issues/2663
+- https://github.com/bazel-contrib/rules_python/issues/2640
+
 [adc]: https://cloud.google.com/docs/authentication/provide-credentials-adc
 [gcloud-install]: https://cloud.google.com/sdk/docs/install
 [google-cloud-auth]: https://cloud.google.com/docs/authentication
