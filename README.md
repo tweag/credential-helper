@@ -54,6 +54,7 @@ The following providers are supported as of today:
 - [AWS S3](/docs/providers/s3.md)
 - [Cloudflare R2](/docs/providers/r2.md)
 - [Google Cloud Storage (GCS)](/docs/providers/gcs.md)
+- [Google Artifact Registry](/docs/providers/gar.md)
 - [GitHub](/docs/providers/github.md)
 - [Container Registries](/docs/providers/oci.md)
 
@@ -120,6 +121,11 @@ common:windows --credential_helper=raw.githubusercontent.com=%workspace%/tools/c
 common:unix --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
 # Google Cloud Storage / GCS (Windows)
 common:windows --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper.exe
+
+# Google Artifact Registry (Unix)
+common:unix --credential_helper=*.pkg.dev=%workspace%/tools/credential-helper
+# Google Artifact Registry (Windows)
+common:windows --credential_helper=*.pkg.dev=%workspace%/tools/credential-helper.exe
 
 # S3 (Unix)
 common:unix --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper

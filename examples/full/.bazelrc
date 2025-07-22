@@ -20,6 +20,7 @@ common:unix --credential_helper=ghcr.io=%workspace%/tools/credential-helper
 common:unix --credential_helper=*.amazonaws.com=%workspace%/tools/credential-helper
 common:unix --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper
 common:unix --credential_helper=index.docker.io=%workspace%/tools/credential-helper
+common:unix --credential_helper=*.pkg.dev=%workspace%/tools/credential-helper
 
 # credential helpers for Windows
 common:windows --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper.exe
@@ -29,5 +30,6 @@ common:windows --credential_helper=ghcr.io=%workspace%/tools/credential-helper.e
 common:windows --credential_helper=*.amazonaws.com=%workspace%/tools/credential-helper.exe
 common:windows --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper.exe
 common:windows --credential_helper=index.docker.io=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=*.pkg.dev=%workspace%/tools/credential-helper.exe
 
 try-import %workspace%/.bazelrc.user

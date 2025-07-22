@@ -5,7 +5,7 @@ To support different users with different needs, the configuration file `.tweag-
 
 ## Setup steps
 
-While some servies require specific setup steps, you can login to most services with the following generic steps.
+While some services require specific setup steps, you can login to most services with the following generic steps.
 The credential helper tries to explain how to login, based on a given uri. Examples:
 
 ```
@@ -37,13 +37,13 @@ $ echo -ne "secret_value" | tools/credential-helper setup-keyring [service-name]
 Most helpers support lookup chains, unless specifically noted otherwise.
 When configuring the helper for a url, you can also define lookup chains.
 
-When reading sercrets from environment variables, the following options exist:
+When reading secrets from environment variables, the following options exist:
 
 - `.urls[].config.lookup_chain[].source`: `"env"` Source of the secret (environment variable)
 - `.urls[].config.lookup_chain[].name`: Name of the environment variable to read
 - `.urls[].config.lookup_chain[].binding`: Optional binding to a specific secret. If unspecified, it binds to the `"default"` secret.
 
-When reading sercrets from the system keyring, the following options exist:
+When reading secrets from the system keyring, the following options exist:
 
 - `.urls[].config.lookup_chain[].source`: `"kering"` Source of the secret (system keyring)
 - `.urls[].config.lookup_chain[].service`: Service name used to store the secret in the keyring.
@@ -52,4 +52,4 @@ When reading sercrets from the system keyring, the following options exist:
 ## Secret bindings
 
 In most cases, you only need a single secret to authenticate. In those cases, the `"default"` binding is used.
-For some servies, multiple secrets may be needed. In those cases, the documentation of the servie specifies the name and purpose of a binding.
+For some services, multiple secrets may be needed. In those cases, the documentation of the service specifies the name and purpose of a binding.
