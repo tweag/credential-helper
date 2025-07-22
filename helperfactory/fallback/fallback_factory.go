@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tweag/credential-helper/api"
+	authenticateGAR "github.com/tweag/credential-helper/authenticate/gar"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
@@ -34,6 +35,8 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		return &authenticateS3.S3{}, nil
 	case strings.EqualFold(u.Hostname(), "remote.buildbuddy.io"):
 		return &authenticateRemoteAPIs.RemoteAPIs{}, nil
+	case strings.HasSuffix(u.Hostname(), "pkg.dev"):
+		return &authenticateGAR.GAR{}, nil
 	// container registries using the default OCI resolver
 	case strings.HasSuffix(u.Hostname(), ".app.snowflake.com"):
 		fallthrough

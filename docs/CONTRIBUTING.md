@@ -23,7 +23,7 @@ This way we avoid contributors putting effort into work that is unlikely to be m
 
 ### Documentation
 
-- The [README](/README.md) contains user-facing documentationg, including setup in your own Bazel project and configuring authentication for different services.
+- The [README](/README.md) contains user-facing documentation, including setup in your own Bazel project and configuring authentication for different services.
 - The [docs](/docs) directory contains detailed documentation on each [provider](/docs/providers/), as well as a guide on developing [out-of-tree plugins][plugins].
 
 ### People

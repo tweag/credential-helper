@@ -1,4 +1,13 @@
 load("@tweag-credential-helper-testing//check_file_hash:defs.bzl", "check_file_hash_test")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+
+py_binary(
+  name = "main",
+  srcs = [":python/main.py"],
+  deps = [
+      "@pypi//requests",
+  ]
+)
 
 check_file_hash_test(
     name = "check_github_repo",

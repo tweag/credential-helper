@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gar",
+    srcs = ["gar.go"],
+    importpath = "github.com/tweag/credential-helper/authenticate/gar",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "//logging",
+        "@org_golang_x_oauth2//:oauth2",
+        "@org_golang_x_oauth2//google",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)
