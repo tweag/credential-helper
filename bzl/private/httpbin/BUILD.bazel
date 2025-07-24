@@ -1,0 +1,12 @@
+alias(
+    name = "httpbin",
+    actual = "@go_httpbin//cmd/go-httpbin:go-httpbin",
+    visibility = ["//visibility:public"],
+)
+
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

@@ -14,6 +14,7 @@ go_binary(
         ":bazel_dep_credential_helper",
         "//bzl/private/release:airgapped",
         "//bzl/private/release:bcr",
+        "//bzl/private/httpbin",
     ],
     embed = [":integration_test_runner_lib"],
     visibility = ["//visibility:public"],

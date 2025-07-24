@@ -10,9 +10,9 @@ common:freebsd --config=unix
 common:openbsd --config=unix
 
 # credential helpers for Unix
-common:unix --credential_helper=httpbin.org=%workspace%/tools/credential-helper
+common:unix --credential_helper=127.0.0.1=%workspace%/tools/credential-helper
 
 # credential helpers for Windows
-common:windows --credential_helper=httpbin.org=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=127.0.0.1=%workspace%/tools/credential-helper.exe
 
 try-import %workspace%/.bazelrc.user
