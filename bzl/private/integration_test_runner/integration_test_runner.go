@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -254,6 +255,35 @@ func copyFSWithSymlinks(destination, source string) error {
 	})
 }
 
+func runHttpbinServer() error {
+	binaryPath, err := runfiles.Rlocation("+_repo_rules+go_httpbin/cmd/go-httpbin/go-httpbin_/go-httpbin")
+	if err != nil {
+		return fmt.Errorf("failed to find go-httpbin binary: %v\n", err)
+	}
+
+	cmd := exec.Command(binaryPath, "-port", "9494")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Start()
+	if err != nil {
+		return fmt.Errorf("failed to start go-httpbin: %w\n", err)
+	}
+
+	fmt.Printf("go-httpbin started with PID: %d\n", cmd.Process.Pid)
+
+	go func() {
+		err := cmd.Wait()
+		if err != nil {
+			log.Printf("go-httpbin process finished with error: %v\n", err)
+		} else {
+			log.Printf("go-httpbin process finished successfully\n")
+		}
+	}()
+
+	return nil
+}
+
 func main() {
 	bazel := os.Getenv("BIT_BAZEL_BINARY")
 	workspaceDir := os.Getenv("BIT_WORKSPACE_DIR") + ".scratch"
@@ -265,6 +295,12 @@ func main() {
 
 	if err := absolutifyEnvVars(); err != nil {
 		panic(err)
+	}
+
+	err := runHttpbinServer()
+	if err != nil {
+		fmt.Println("failed to run go-httpbin")
+		os.Exit(1)
 	}
 
 	var failed bool

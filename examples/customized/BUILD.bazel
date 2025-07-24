@@ -29,7 +29,7 @@ check_file_hash_test(
     name = "check_httpbin_basic_auth",
     args = [
         "$(location @httpbin_basic_auth//file)",
-        "862df46c49d3993226614a265acc0460169eb9d16951d581e9f139153ad95138",
+        "6e115a4749be6596e548d0f1bc1ec968ee4bb97ab135a2c039de6e9f44834e17",
     ],
     data = ["@httpbin_basic_auth//file"],
 )

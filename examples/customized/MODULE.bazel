@@ -40,6 +40,6 @@ http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_
 
 http_file(
     name = "httpbin_basic_auth",
-    integrity = "sha256-hi30bEnTmTImYUomWswEYBaeudFpUdWB6fE5FTrZUTg=",
-    urls = ["https://httpbin.org/basic-auth/password/swordfish"],
+    integrity = "sha256-bhFaR0m+ZZblSNDxvB7JaO5LuXqxNaLAOd5un0SDThc=",
+    urls = ["http://127.0.0.1:9494/basic-auth/password/swordfish"],
 )

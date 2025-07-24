@@ -1,0 +1,123 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+new file mode 100644
+index 0000000..abccfc7
+--- /dev/null
++++ b/BUILD.bazel
+@@ -0,0 +1,3 @@
++load("@gazelle//:def.bzl", "gazelle")
++
++gazelle(name = "gazelle")
+diff --git a/MODULE.bazel b/MODULE.bazel
+new file mode 100644
+index 0000000..78088a3
+--- /dev/null
++++ b/MODULE.bazel
+@@ -0,0 +1,5 @@
++bazel_dep(name = "rules_go", version = "0.46.0")
++bazel_dep(name = "gazelle", version = "0.37.0")
++
++go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
++go_sdk.download(version = "1.23.1")
+diff --git a/cmd/go-httpbin/BUILD.bazel b/cmd/go-httpbin/BUILD.bazel
+new file mode 100644
+index 0000000..3c5a6f7
+--- /dev/null
++++ b/cmd/go-httpbin/BUILD.bazel
+@@ -0,0 +1,15 @@
++load("@rules_go//go:def.bzl", "go_binary", "go_library")
++
++go_library(
++    name = "go-httpbin_lib",
++    srcs = ["main.go"],
++    importpath = "github.com/mccutchen/go-httpbin/v2/cmd/go-httpbin",
++    visibility = ["//visibility:private"],
++    deps = ["//httpbin/cmd"],
++)
++
++go_binary(
++    name = "go-httpbin",
++    embed = [":go-httpbin_lib"],
++    visibility = ["//visibility:public"],
++)
+diff --git a/httpbin/BUILD.bazel b/httpbin/BUILD.bazel
+new file mode 100644
+index 0000000..709aee7
+--- /dev/null
++++ b/httpbin/BUILD.bazel
+@@ -0,0 +1,33 @@
++load("@rules_go//go:def.bzl", "go_library")
++
++go_library(
++    name = "httpbin",
++    srcs = [
++        "doc.go",
++        "handlers.go",
++        "helpers.go",
++        "httpbin.go",
++        "middleware.go",
++        "options.go",
++        "responses.go",
++        "static_assets.go",
++    ],
++    embedsrcs = [
++        "static/forms-post.html.tmpl",
++        "static/image.jpeg",
++        "static/image.png",
++        "static/image.svg",
++        "static/image.webp",
++        "static/index.html.tmpl",
++        "static/moby.html",
++        "static/sample.json",
++        "static/sample.xml",
++        "static/utf8.html",
++    ],
++    importpath = "github.com/mccutchen/go-httpbin/v2/httpbin",
++    visibility = ["//visibility:public"],
++    deps = [
++        "//httpbin/digest",
++        "//httpbin/websocket",
++    ],
++)
+diff --git a/httpbin/cmd/BUILD.bazel b/httpbin/cmd/BUILD.bazel
+new file mode 100644
+index 0000000..8840eab
+--- /dev/null
++++ b/httpbin/cmd/BUILD.bazel
+@@ -0,0 +1,9 @@
++load("@rules_go//go:def.bzl", "go_library")
++
++go_library(
++    name = "cmd",
++    srcs = ["cmd.go"],
++    importpath = "github.com/mccutchen/go-httpbin/v2/httpbin/cmd",
++    visibility = ["//visibility:public"],
++    deps = ["//httpbin"],
++)
+diff --git a/httpbin/digest/BUILD.bazel b/httpbin/digest/BUILD.bazel
+new file mode 100644
+index 0000000..f4eabcb
+--- /dev/null
++++ b/httpbin/digest/BUILD.bazel
+@@ -0,0 +1,8 @@
++load("@rules_go//go:def.bzl", "go_library")
++
++go_library(
++    name = "digest",
++    srcs = ["digest.go"],
++    importpath = "github.com/mccutchen/go-httpbin/v2/httpbin/digest",
++    visibility = ["//visibility:public"],
++)
+diff --git a/httpbin/websocket/BUILD.bazel b/httpbin/websocket/BUILD.bazel
+new file mode 100644
+index 0000000..143f349
+--- /dev/null
++++ b/httpbin/websocket/BUILD.bazel
+@@ -0,0 +1,8 @@
++load("@rules_go//go:def.bzl", "go_library")
++
++go_library(
++    name = "websocket",
++    srcs = ["websocket.go"],
++    importpath = "github.com/mccutchen/go-httpbin/v2/httpbin/websocket",
++    visibility = ["//visibility:public"],
++)
