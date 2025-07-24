@@ -1,0 +1,16 @@
+lockfileVersion: '6.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+dependencies:
+  '@gar/emoji-regex':
+    specifier: 10.4.0
+    version: 10.4.0
+
+packages:
+
+  /@gar/emoji-regex@10.4.0:
+    resolution: {integrity: sha512-uhjv2Swf8hAo8WosWflope+tjjGsiA/SvttVUgB5CKVVesg1ZW1WJ55hEeCDodpIMj0ttYj5dqBCdkZASVKMmg==, tarball: https://europe-west8-npm.pkg.dev/git-credential-helper-dev/nodejs-test-repository/@gar/emoji-regex/-/@gar/emoji-regex-10.4.0.tgz}
+    dev: false

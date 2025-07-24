@@ -9,6 +9,12 @@ py_binary(
     ],
 )
 
+alias(
+    name = "js_script",
+    actual = "//nodejs:js_script",
+    visibility = ["//visibility:public"],
+)
+
 check_file_hash_test(
     name = "check_github_repo",
     args = [
