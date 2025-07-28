@@ -99,6 +99,12 @@ http_file(
     urls = ["https://storage.googleapis.com/rules_gcs/hello_world"],
 )
 
+http_file(
+    name = "hello_world_blob_storage",
+    integrity = "sha256-yYwktnfv9Ehgr+pvSTu67FuxxMuyCcb8K7tH9m/yrTE=",
+    urls = ["https://chsbstorage.blob.core.windows.net/gh-test-container/hello_world"],
+)
+
 # temporarily removed until CI has required access
 # http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 

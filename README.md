@@ -52,6 +52,7 @@ The following providers are supported as of today:
 
 - [Remote Execution & Remote Caching Services](/docs/providers/remoteapis.md)
 - [AWS S3](/docs/providers/s3.md)
+- [Azure Blob Storage](/docs/providers/azstorage.md)
 - [Cloudflare R2](/docs/providers/r2.md)
 - [Google Cloud Storage (GCS)](/docs/providers/gcs.md)
 - [Google Artifact Registry](/docs/providers/gar.md)
@@ -142,6 +143,11 @@ common:windows --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credenti
 common:unix --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper
 # Cloudflare R2 (Windows)
 common:windows --credential_helper=*.r2.cloudflarestorage.com=%workspace%/tools/credential-helper.exe
+
+# Azure Blob Storage (Unix)
+common:unix --credential_helper=*.blob.core.windows.net=%workspace%/tools/credential-helper
+# Azure Blob Storage (Windows)
+common:windows --credential_helper=*.blob.core.windows.net=%workspace%/tools/credential-helper.exe
 ```
 
 </details>

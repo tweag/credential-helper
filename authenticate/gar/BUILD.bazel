@@ -7,7 +7,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//api",
-        "//logging",
         "@org_golang_x_oauth2//:oauth2",
         "@org_golang_x_oauth2//google",
     ],
