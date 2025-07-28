@@ -29,10 +29,11 @@ _helper_no_dep_on_source_in_auto_mode_test = _define_dependency_test(should_depe
 _helper_no_dep_on_source_in_prebuilt_mode_test = _define_dependency_test(should_depend = False, build_mode = "prebuilt")
 
 def installer_test_suite(name, target_under_test):
-    """Generate test suite and test targets for installer depdendency tests.
+    """Generate test suite and test targets for installer dependency tests.
 
     Args:
       name: String, a unique name for the test-suite target.
+      target_under_test: String, the target that will be tested.
     """
     unittest.suite(
         name,

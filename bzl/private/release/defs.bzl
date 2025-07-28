@@ -27,6 +27,7 @@ _goos_list = [
     GOOS_WINDOWS,
 ]
 
+# buildifier: disable=unused-variable
 _goarch_list = [
     GOARCH_386,
     GOARCH_AMD64,
@@ -59,14 +60,14 @@ PLATFORMS = _generate_platforms()
 
 _platform_names = [platform_name(platform) for platform in PLATFORMS]
 
-ReleasePlatform = provider(fields = ["os", "arch", "platform"])
+ReleasePlatformInfo = provider(doc = "Holds information about a platform configuration", fields = ["os", "arch", "platform"])
 
 def _release_platform_flag_impl(ctx):
     tup = _parse_platform_name(ctx.build_setting_value)
     if tup not in PLATFORMS:
         fail("unknown release platform %s" % ctx.build_setting_value)
 
-    return ReleasePlatform(os = tup[0], arch = tup[1], platform = Label(ctx.build_setting_value))
+    return ReleasePlatformInfo(os = tup[0], arch = tup[1], platform = Label(ctx.build_setting_value))
 
 release_platform_flag = rule(
     implementation = _release_platform_flag_impl,

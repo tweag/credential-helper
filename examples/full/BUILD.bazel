@@ -1,12 +1,12 @@
-load("@tweag-credential-helper-testing//check_file_hash:defs.bzl", "check_file_hash_test")
 load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@tweag-credential-helper-testing//check_file_hash:defs.bzl", "check_file_hash_test")
 
 py_binary(
-  name = "main",
-  srcs = [":python/main.py"],
-  deps = [
-      "@pypi//requests",
-  ]
+    name = "main",
+    srcs = [":python/main.py"],
+    deps = [
+        "@pypi//requests",
+    ],
 )
 
 check_file_hash_test(

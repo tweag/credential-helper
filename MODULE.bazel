@@ -48,6 +48,8 @@ bazel_dep(
     dev_dependency = True,
 )
 
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
+
 bazel_binaries = use_extension(
     "@rules_bazel_integration_test//:extensions.bzl",
     "bazel_binaries",
@@ -64,11 +66,12 @@ module_version = use_extension("//bzl/private/config:defs.bzl", "module_version"
 use_repo(module_version, "tweag-credential-helper-version")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 http_archive(
     name = "go_httpbin",
-    url = "https://github.com/mccutchen/go-httpbin/archive/refs/tags/v2.18.3.tar.gz",
     integrity = "sha256-POrxD78ramS8zCt4GRORph5tgH5fHYQSnM7uUdR1soE=",
-    patches = ["//bzl/private/httpbin:patches/bzlmod.patch"],
     patch_args = ["-p1"],
-    strip_prefix = "go-httpbin-2.18.3"
+    patches = ["//bzl/private/httpbin:patches/bzlmod.patch"],
+    strip_prefix = "go-httpbin-2.18.3",
+    url = "https://github.com/mccutchen/go-httpbin/archive/refs/tags/v2.18.3.tar.gz",
 )
