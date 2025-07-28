@@ -1,7 +1,7 @@
 # To update these lines, execute
 # `bazel run @rules_bazel_integration_test//tools:update_deleted_packages`
-build --deleted_packages=examples/customized,examples/customized/helper/authenticate,examples/customized/helper/cache,examples/customized/helper/helperfactory,examples/full,examples/full/analysis,examples/testing/analysis,examples/testing/check_file_hash
-query --deleted_packages=examples/customized,examples/customized/helper/authenticate,examples/customized/helper/cache,examples/customized/helper/helperfactory,examples/full,examples/full/analysis,examples/testing/analysis,examples/testing/check_file_hash
+build --deleted_packages=examples/customized,examples/customized/helper/authenticate,examples/customized/helper/cache,examples/customized/helper/helperfactory,examples/full,examples/full/analysis,examples/full/nodejs,examples/testing/analysis,examples/testing/check_file_hash
+query --deleted_packages=examples/customized,examples/customized/helper/authenticate,examples/customized/helper/cache,examples/customized/helper/helperfactory,examples/full,examples/full/analysis,examples/full/nodejs,examples/testing/analysis,examples/testing/check_file_hash
 
 test --test_output=errors
 build --@rules_go//go/config:pure

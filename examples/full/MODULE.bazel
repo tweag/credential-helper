@@ -28,6 +28,8 @@ local_path_override(
 bazel_dep(name = "rules_go", version = "0.54.0", dev_dependency = True)
 
 bazel_dep(name = "rules_python", version = "1.5.1")
+bazel_dep(name = "aspect_rules_js", version = "2.4.0")
+bazel_dep(name = "rules_nodejs", version = "6.3.0")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(python_version = "3.11")
@@ -41,6 +43,18 @@ pip.parse(
     requirements_lock = "//:python/requirements.txt",
 )
 use_repo(pip, "pypi")
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
+node.toolchain(node_version = "16.14.2")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", dev_dependency = True)
+npm.npm_translate_lock(
+    name = "npm",
+    npmrc = "//nodejs:.npmrc",
+    pnpm_lock = "//nodejs:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+use_repo(npm, "npm")
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)
 go_sdk.download(version = "1.24.2")

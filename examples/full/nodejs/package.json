@@ -1,0 +1,11 @@
+{
+    "name": "nodejs-testing",
+    "main": "index.js",
+    "private": true,
+    "dependencies": {
+        "@gar/emoji-regex": "10.4.0"
+    },
+  "scripts": {
+    "artifactregistry-login": "npx google-artifactregistry-auth --repo-config=./.npmrc --credential-config=./.npmrc"
+  }
+}
