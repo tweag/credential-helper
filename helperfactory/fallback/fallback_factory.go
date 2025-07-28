@@ -33,7 +33,7 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		return &authenticateGitHub.GitHub{}, nil
 	case strings.HasSuffix(strings.ToLower(u.Hostname()), ".r2.cloudflarestorage.com") && !u.Query().Has("X-Amz-Expires"):
 		return &authenticateS3.S3{}, nil
-	case strings.EqualFold(u.Hostname(), "remote.buildbuddy.io"):
+	case strings.HasSuffix(u.Hostname(), ".buildbuddy.io"):
 		return &authenticateRemoteAPIs.RemoteAPIs{}, nil
 	case strings.HasSuffix(u.Hostname(), "pkg.dev"):
 		return &authenticateGAR.GAR{}, nil
