@@ -12,9 +12,9 @@ go_binary(
     name = "integration_test_runner",
     data = [
         ":bazel_dep_credential_helper",
+        "//bzl/private/httpbin",
         "//bzl/private/release:airgapped",
         "//bzl/private/release:bcr",
-        "//bzl/private/httpbin",
     ],
     embed = [":integration_test_runner_lib"],
     visibility = ["//visibility:public"],

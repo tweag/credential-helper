@@ -14,6 +14,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  buildifier_check:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+    - uses: cgrindel/gha_set_up_bazel@v1
+      with:
+        repo_name: credential-helper
+    - name: Run buildifier
+      run: bazelisk run //:buildifier.check
   tidy_and_test_matrix:
     strategy:
       fail-fast: false

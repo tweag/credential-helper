@@ -7,8 +7,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//api",
-        "//authenticate/gcs",
         "//authenticate/gar",
+        "//authenticate/gcs",
         "//authenticate/github",
         "//authenticate/null",
         "//authenticate/oci",

@@ -125,6 +125,7 @@ def _lockfile_to_dict(lockfile, basename):
         requested_helpers["%s_%s_%s" % (basename, item["os"], item["cpu"])] = item
     return requested_helpers
 
+# buildifier: disable=uninitialized
 def _prebuilt_credential_helper_collection_for_module(ctx, mod):
     requested_helpers = {}
     collections = {}

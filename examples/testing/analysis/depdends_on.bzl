@@ -1,4 +1,5 @@
 DependsOnInfo = provider(
+    doc = "Tracks whether a target has a transitive dependency on @tweag-credential-helper//:tweag-credential-helper",
     fields = {
         "DependencyFound": "True iff any transitive dependency is @tweag-credential-helper//:tweag-credential-helper",
         "Chain": "The chain of dependencies that led to the dependency on @tweag-credential-helper//:tweag-credential-helper",
@@ -11,19 +12,28 @@ def _depdends_on_aspect_impl(target, ctx):
         return [DependsOnInfo(DependencyFound = True, Chain = [target.label])]
     for attr_name in dir(ctx.rule.attr):
         attr_value = getattr(ctx.rule.attr, attr_name)
-        maybe_found = handle_provier_in_attr(target.label, attr_value, type(ctx.attr._needle))
+        maybe_found = handle_provider_in_attr(target.label, attr_value, type(ctx.attr._needle))
         if maybe_found != None:
             return maybe_found
     return [DependsOnInfo(DependencyFound = False, Chain = [])]
 
-def handle_provier_in_attr(label, attr_value, target_type):
-    # find all dependencies of the rule
-    # of type "Target".
-    # Those can come from:
-    # - attr.label (single Target)
-    # - attr.label_list (list of Targets)
-    # - attr.label_keyed_string_dict (dict of Target -> string)
-    # - attr.string_keyed_label_dict (dict of string -> Target)
+def handle_provider_in_attr(label, attr_value, target_type):
+    """Find all dependencies of the rule of type "Target".
+
+    Those can come from:
+     - attr.label (single Target)
+     - attr.label_list (list of Targets)
+     - attr.label_keyed_string_dict (dict of Target -> string)
+     - attr.string_keyed_label_dict (dict of string -> Target)
+
+    Args:
+        label: String, The label of the current target being analyzed for dependencies.
+        attr_value: String, The attribute value to inspect.
+        target_type: String, The type to match against.
+
+    Returns:
+        A DependsOnInfo provider liste if a dependency chain is found or None if no dependency is found.
+    """
     if type(attr_value) == target_type:
         if DependsOnInfo in attr_value:
             dep_info = attr_value[DependsOnInfo]
