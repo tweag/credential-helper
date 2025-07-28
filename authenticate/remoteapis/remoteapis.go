@@ -170,6 +170,9 @@ func configFromContext(ctx context.Context, uri *url.URL) (configFragment, error
 	if cfg, ok := wellKnownServices[uri.Host]; ok {
 		return helperconfig.FromContext(ctx, cfg)
 	}
+	if strings.HasSuffix(uri.Host, ".buildbuddy.io") {
+		return helperconfig.FromContext(ctx, wellKnownServices["remote.buildbuddy.io"])
+	}
 
 	return helperconfig.FromContext(ctx, configFragment{
 		AuthMethod: "header",
