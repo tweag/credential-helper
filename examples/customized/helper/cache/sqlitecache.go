@@ -17,7 +17,7 @@ import (
 )
 
 type SqliteCache struct {
-	mux sync.RWMutex
+	mux sync.Mutex
 	db  *sql.DB
 }
 
@@ -27,7 +27,7 @@ func NewSqliteCache() api.Cache {
 		os.MkdirAll(filepath.Dir(dbFilePath), os.ModePerm)
 	}
 	// TODO: provide a way to close the DB
-	db, err := sql.Open("sqlite", dbFilePath)
+	db, err := sql.Open("sqlite", dbFilePath+"?_journal_mode=WAL&_busy_timeout=3000")
 	if err != nil {
 		panic(fmt.Sprintf("failed to open database: %v", err))
 	}
@@ -41,9 +41,6 @@ func NewSqliteCache() api.Cache {
 }
 
 func (c *SqliteCache) Retrieve(ctx context.Context, cacheKey string) (api.GetCredentialsResponse, error) {
-	c.mux.RLock()
-	defer c.mux.RUnlock()
-
 	rows, err := c.db.Query("SELECT get_credentials_response FROM credentials WHERE cache_key = ?", cacheKey)
 	if err != nil {
 		return api.GetCredentialsResponse{}, err
