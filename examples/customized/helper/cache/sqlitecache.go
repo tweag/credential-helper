@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,8 +19,11 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+const MaxRetries = 5
+const BaseDelay = 100 * time.Millisecond
+
 type SqliteCache struct {
-	mux sync.RWMutex
+	mux sync.Mutex
 	db  *sql.DB
 }
 
@@ -27,7 +33,7 @@ func NewSqliteCache() api.Cache {
 		os.MkdirAll(filepath.Dir(dbFilePath), os.ModePerm)
 	}
 	// TODO: provide a way to close the DB
-	db, err := sql.Open("sqlite", dbFilePath)
+	db, err := sql.Open("sqlite", dbFilePath+"?_journal_mode=WAL&_busy_timeout=3000")
 	if err != nil {
 		panic(fmt.Sprintf("failed to open database: %v", err))
 	}
@@ -41,9 +47,6 @@ func NewSqliteCache() api.Cache {
 }
 
 func (c *SqliteCache) Retrieve(ctx context.Context, cacheKey string) (api.GetCredentialsResponse, error) {
-	c.mux.RLock()
-	defer c.mux.RUnlock()
-
 	rows, err := c.db.Query("SELECT get_credentials_response FROM credentials WHERE cache_key = ?", cacheKey)
 	if err != nil {
 		return api.GetCredentialsResponse{}, err
@@ -92,8 +95,23 @@ func (c *SqliteCache) Store(ctx context.Context, cacheValue api.CachableGetCrede
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(cacheValue.CacheKey, string(rawGetCredentialsResponse), cacheValue.Response.Expires)
-	if err != nil {
+
+	for i := 0; i < MaxRetries; i++ {
+		_, err = stmt.Exec(cacheValue.CacheKey, string(rawGetCredentialsResponse), cacheValue.Response.Expires)
+
+		if err == nil {
+			break
+		}
+
+		// The SQLITE_BUSY error is retryable
+		errorString := err.Error()
+		if strings.Contains(errorString, "SQLITE_BUSY") {
+			delay := time.Duration(float64(BaseDelay) * math.Pow(2, float64(i)))
+			log.Printf("retrying store command (%v/%v) after %v ms ...\n", i, MaxRetries, delay)
+			time.Sleep(delay)
+			continue
+		}
+
 		return err
 	}
 
