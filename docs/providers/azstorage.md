@@ -36,7 +36,9 @@ Add to your `.bazelrc`:
 common --credential_helper=*.blob.core.windows.net=%workspace%/tools/credential-helper
 ```
 
-TODO: Mention how to configure the x-ms-version header value.
+It's possible to configure the [x-ms-version][storage-versioning] header through the
+`AZURE_HEADER_X_MS_VERSION` environment variable. If not provided it will default to `2025-07-05`.
 
 [azure-rbac-docs]: https://learn.microsoft.com/en-us/azure/role-based-access-control/
 [azure-auth-docs]: https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli?view=azure-cli-latest
+[storage-versioning]: https://learn.microsoft.com/en-us/rest/api/storageservices/versioning-for-the-azure-storage-services
