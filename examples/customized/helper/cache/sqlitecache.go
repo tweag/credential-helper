@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +18,9 @@ import (
 	"github.com/tweag/credential-helper/api"
 	_ "modernc.org/sqlite"
 )
+
+const MaxRetries = 5
+const BaseDelay = 100 * time.Millisecond
 
 type SqliteCache struct {
 	mux sync.Mutex
@@ -89,8 +95,23 @@ func (c *SqliteCache) Store(ctx context.Context, cacheValue api.CachableGetCrede
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(cacheValue.CacheKey, string(rawGetCredentialsResponse), cacheValue.Response.Expires)
-	if err != nil {
+
+	for i := 0; i < MaxRetries; i++ {
+		_, err = stmt.Exec(cacheValue.CacheKey, string(rawGetCredentialsResponse), cacheValue.Response.Expires)
+
+		if err == nil {
+			break
+		}
+
+		// The SQLITE_BUSY error is retryable
+		errorString := err.Error()
+		if strings.Contains(errorString, "SQLITE_BUSY") {
+			delay := time.Duration(float64(BaseDelay) * math.Pow(2, float64(i)))
+			log.Printf("retrying store command (%v/%v) after %v ms ...\n", i, MaxRetries, delay)
+			time.Sleep(delay)
+			continue
+		}
+
 		return err
 	}
 
