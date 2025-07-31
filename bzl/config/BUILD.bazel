@@ -1,5 +1,9 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 
+package(
+    default_visibility = ["//visibility:public"],
+)
+
 string_flag(
     name = "helper_build_mode",
     build_setting_default = "auto",
@@ -8,7 +12,6 @@ string_flag(
         "from_source",
         "prebuilt",
     ],
-    visibility = ["//visibility:public"],
 )
 
 string_flag(
@@ -19,7 +22,6 @@ string_flag(
     # add it to .gitignore and point --credential_helper in .bazelrc to the same path.
     # This avoid the need for a shell wrapper but modifies the source tree.
     build_setting_default = "%workdir%/bin/credential-helper",
-    visibility = ["//visibility:public"],
 )
 
 string_flag(
@@ -29,7 +31,6 @@ string_flag(
     # copies the exe into the source tree.
     # The path chosen here should also be used by --credential_helper in .bazelrc
     build_setting_default = "%workspace%\\tools\\credential-helper.exe",
-    visibility = ["//visibility:public"],
 )
 
 config_setting(
