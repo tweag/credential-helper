@@ -17,8 +17,10 @@ jobs:
   buildifier_check:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
-    - uses: cgrindel/gha_set_up_bazel@v1
+    - name: Checkout
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+    - name: Setup Bazel
+      uses: cgrindel/gha_set_up_bazel@v1
       with:
         repo_name: credential-helper
     - name: Run buildifier
@@ -30,10 +32,14 @@ jobs:
         runner: [macos-13, macos-15, ubuntu-22.04, windows-2025]
     runs-on: ${{ matrix.runner }}
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
-    - uses: cgrindel/gha_set_up_bazel@v1
+    - name: Checkout
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+    - name: Setup Bazel
+      uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
       with:
-        repo_name: credential-helper
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
     - name: Execute Tests
       run: bazelisk test //...
   integration_test_matrix:
@@ -47,7 +53,8 @@ jobs:
       contents: read
       packages: read
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+    - name: Checkout
+      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v3
       with:
@@ -61,7 +68,8 @@ jobs:
         service_account: "github-service-account@git-credential-helper-dev.iam.gserviceaccount.com"
         export_environment_variables: true
         create_credentials_file: true
-    - uses: cgrindel/gha_set_up_bazel@v1
+    - name: Setup Bazel
+      uses: cgrindel/gha_set_up_bazel@v1
       with:
         repo_name: credential-helper
     - name: Execute Integration Tests
@@ -80,6 +88,7 @@ jobs:
     needs: [tidy_and_test_matrix, integration_test_matrix]
     if: ${{ always() }}
     steps:
-      - uses: cgrindel/gha_join_jobs@v1
+      - name: Join Jobs
+        uses: cgrindel/gha_join_jobs@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

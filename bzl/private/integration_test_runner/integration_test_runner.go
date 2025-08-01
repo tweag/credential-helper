@@ -122,7 +122,7 @@ func bazelCommands(bazel string, startupFlags []string) (setup []commandLine, te
 	// any failed fetches are retried with a helper in place
 	setupCommands = append(setupCommands, bazelCommand(bazel, []string{"shutdown"}, startupFlags))
 
-	return setupCommands, []commandLine{bazelCommand(bazel, []string{"test", "//..."}, startupFlags)}, []commandLine{bazelCommand(bazel, []string{"shutdown"}, startupFlags)}
+	return setupCommands, []commandLine{bazelCommand(bazel, []string{"test", "--cache_test_results=no", "//..."}, startupFlags)}, []commandLine{bazelCommand(bazel, []string{"shutdown"}, startupFlags)}
 }
 
 func runBazelCommands(bazel, helper, workspaceDir string) error {
