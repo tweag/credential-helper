@@ -2,6 +2,7 @@ package lookupchain
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,12 +11,14 @@ import (
 	"strings"
 
 	keyring "github.com/zalando/go-keyring"
+	gauth "golang.org/x/oauth2/google"
 )
 
 const (
 	SourceEnv     = "env"
 	SourceKeyring = "keyring"
 	SourceStatic  = "static"
+	SourceGoogle  = "google"
 )
 
 type LookupChain struct {
@@ -102,6 +105,12 @@ func (c *LookupChain) sourceFor(entry ConfigEntry) (Source, error) {
 			return nil, fmt.Errorf("unmarshalling static source: %w", err)
 		}
 		source = &static
+	case SourceGoogle:
+		var google Google
+		if err := decoder.Decode(&google); err != nil {
+			return nil, fmt.Errorf("unmarshalling google source: %w", err)
+		}
+		source = &google
 	default:
 		return nil, fmt.Errorf("unknown source %q", entry.Source)
 	}
@@ -251,6 +260,63 @@ func (s *Static) SetupInstructions(binding string) (string, bool) {
 	}
 
 	return fmt.Sprintf(" - If none of previous sources work, fall back to the static value %q (status: SET)", s.Value), true
+}
+
+type Google struct {
+	// Source is the name of the source used to look up the secret.
+	// It must be "google".
+	Source string `json:"source"`
+	// Scope is the OAuth2 scope to request for the token.
+	Scope string `json:"scope"`
+	// Binding binds the value to a well-known name in the helper.
+	// If not specified, the value is bound to the default secret of the helper.
+	Binding string `json:"binding,omitempty"`
+}
+
+func (g *Google) Lookup(binding string) (string, error) {
+	if g.Binding != binding {
+		return "", &NotFoundErr{}
+	}
+
+	ctx := context.Background()
+	creds, err := gauth.FindDefaultCredentials(ctx, g.Scope)
+	if err != nil {
+		return "", fmt.Errorf("failed to find default credentials: %w", err)
+	}
+
+	token, err := creds.TokenSource.Token()
+	if err != nil {
+		return "", fmt.Errorf("failed to get token: %w", err)
+	}
+
+	return "Bearer " + token.AccessToken, nil
+}
+
+func (g *Google) Canonicalize() {
+	g.Source = "google"
+	if g.Binding == "" {
+		g.Binding = "default"
+	}
+}
+
+func (g *Google) SetupInstructions(binding string) (string, bool) {
+	if g.Binding != binding {
+		return "", false
+	}
+
+	instructions := `
+ - Option 1: Using gcloud CLI as a regular user (Recommended)
+   1. Install the Google Cloud SDK: https://cloud.google.com/sdk/docs/install
+   2. Run:
+      $ gcloud auth application-default login
+   3. Follow the browser prompts to authenticate
+
+ - Option 2: Using a Service Account Key, OpenID Connect or other authentication mechanisms
+   1. Follow Google's documentation: https://cloud.google.com/docs/authentication
+   2. Ensure your method sets the Application Default Credentials (ADC)
+			environment variable (GOOGLE_APPLICATION_CREDENTIALS) or the credentials file
+			is in a well-known location.`
+	return instructions, true
 }
 
 // Default constructs a partially marshalled Config from a slice of specific config entries.

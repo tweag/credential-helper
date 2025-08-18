@@ -170,6 +170,10 @@ Add to your `.tweag-credential-helper.json`:
                     {
                         "source": "keyring",
                         "service": "tweag-credential-helper:buildbarn_api_key"
+                    },
+                    {
+                        "source": "google",
+                        "scope": "https://www.googleapis.com/auth/cloud-platform"
                     }
                 ]
             }
