@@ -5,7 +5,10 @@ go_library(
     srcs = ["lookupchain.go"],
     importpath = "github.com/tweag/credential-helper/authenticate/internal/lookupchain",
     visibility = ["//authenticate:__subpackages__"],
-    deps = ["@com_github_zalando_go_keyring//:go-keyring"],
+    deps = [
+        "@com_github_zalando_go_keyring//:go-keyring",
+        "@org_golang_x_oauth2//google",
+    ],
 )
 
 filegroup(
