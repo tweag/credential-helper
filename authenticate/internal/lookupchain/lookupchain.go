@@ -129,6 +129,25 @@ type ConfigEntry struct {
 	json.RawMessage
 }
 
+func (c *ConfigEntry) UnmarshalJSON(data []byte) error {
+	// Use special type to learn the source field.
+	// This is necessary because the embedded json.RawMessage
+	// is greedy and will consume the entire input.
+	type SourceConfigEntry struct {
+		Source string `json:"source"`
+	}
+	var entry SourceConfigEntry
+	if err := json.Unmarshal(data, &entry); err != nil {
+		return err
+	}
+	if entry.Source == "" {
+		return errors.New("source must be set")
+	}
+	c.Source = entry.Source
+	c.RawMessage = data
+	return nil
+}
+
 type Source interface {
 	Lookup(binding string) (string, error)
 	Canonicalize()
