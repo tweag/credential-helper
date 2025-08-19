@@ -188,6 +188,9 @@ When using the system keyring, login with the following command:
 $ echo -ne "$BUILDBARN_API_KEY" | tools/credential-helper setup-keyring tweag-credential-helper:buildbarn_api_key
 ```
 
+The last entry in the lookup chain uses a Google API key for authentication.
+Some Buildbarn setups use Google authentication, so configure this only if applicable.
+
 ### <a name="section-bazel-remote"></a> bazel-remote
 
 The only header-based authentication scheme [bazel-remote][bazel-remote] supports at the time of writing is basic auth (username and password).
