@@ -7,6 +7,9 @@ go_library(
     visibility = ["//authenticate:__subpackages__"],
     deps = [
         "@com_github_zalando_go_keyring//:go-keyring",
+        "@org_golang_google_api//idtoken",
+        "@org_golang_google_api//option",
+        "@org_golang_x_oauth2//:oauth2",
         "@org_golang_x_oauth2//google",
     ],
 )
