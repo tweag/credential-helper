@@ -6,12 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	keyring "github.com/zalando/go-keyring"
+	"golang.org/x/oauth2"
 	gauth "golang.org/x/oauth2/google"
+	idtoken "google.golang.org/api/idtoken"
+	option "google.golang.org/api/option"
 )
 
 const (
@@ -281,12 +287,26 @@ func (s *Static) SetupInstructions(binding string) (string, bool) {
 	return fmt.Sprintf(" - If none of previous sources work, fall back to the static value %q (status: SET)", s.Value), true
 }
 
+type GoogleTokenResponse struct {
+	IdentityToken string `json:"id_token,omitempty"`
+	oauth2.Token
+}
+
 type Google struct {
-	// Source is the name of the source used to look up the secret.
-	// It must be "google".
+	// Source must be "google".
 	Source string `json:"source"`
-	// Scope is the OAuth2 scope to request for the token.
-	Scope string `json:"scope"`
+
+	// TokenType selects which kind of token to mint: "access" (default) or "id" / "jwt".
+	TokenType string `json:"token_type,omitempty"`
+
+	// Scopes are defined in
+	// https://developers.google.com/identity/protocols/oauth2/scopes
+	Scopes []string `json:"scopes,omitempty"`
+
+	// Audience is the OIDC target audience.
+	// It is used when minting an ID token.
+	Audience string `json:"audience,omitempty"`
+
 	// Binding binds the value to a well-known name in the helper.
 	// If not specified, the value is bound to the default secret of the helper.
 	Binding string `json:"binding,omitempty"`
@@ -298,17 +318,91 @@ func (g *Google) Lookup(binding string) (string, error) {
 	}
 
 	ctx := context.Background()
-	creds, err := gauth.FindDefaultCredentials(ctx, g.Scope)
-	if err != nil {
-		return "", fmt.Errorf("failed to find default credentials: %w", err)
-	}
 
-	token, err := creds.TokenSource.Token()
-	if err != nil {
-		return "", fmt.Errorf("failed to get token: %w", err)
-	}
+	switch strings.ToLower(strings.TrimSpace(g.TokenType)) {
+	case "", "access":
+		creds, err := gauth.FindDefaultCredentials(ctx, g.Scopes...)
+		if err != nil {
+			return "", fmt.Errorf("failed to find default credentials: %w", err)
+		}
+		token, err := creds.TokenSource.Token()
+		if err != nil {
+			return "", fmt.Errorf("failed to get access token: %w", err)
+		}
+		return "Bearer " + token.AccessToken, nil
 
-	return "Bearer " + token.AccessToken, nil
+	case "id", "jwt":
+		creds, ferr := gauth.FindDefaultCredentials(ctx)
+		if ferr != nil {
+			return "", fmt.Errorf("failed to find default credentials for id token: %w", ferr)
+		}
+
+		// If audience is provided, use the standard idtoken approach
+		if g.Audience != "" {
+			ts, err := idtoken.NewTokenSource(ctx, g.Audience, option.WithCredentials(creds))
+			if err != nil {
+				return "", fmt.Errorf("failed to create id token source: %w", err)
+			}
+			tok, err := ts.Token()
+			if err != nil {
+				return "", fmt.Errorf("failed to mint id token: %w", err)
+			}
+			// tok.AccessToken holds the JWT (ID token).
+			return "Bearer " + tok.AccessToken, nil
+		}
+
+		// Alternative flow: use data from application_default_credentials.json
+		// to mint an ID token.
+		// This is not documented officially, but sometimes this is the only option available.
+		if creds.JSON == nil {
+			return "", fmt.Errorf("no JSON credentials available for JWT config")
+		}
+
+		var requestBody map[string]any
+		if err := json.Unmarshal(creds.JSON, &requestBody); err != nil {
+			return "", fmt.Errorf("failed to unmarshal JSON credentials: %w", err)
+		}
+		requestBody["grant_type"] = "refresh_token"
+
+		// Send the request to the Google OAuth2 token endpoint
+		jsonBody, err := json.Marshal(requestBody)
+		if err != nil {
+			return "", fmt.Errorf("failed to marshal request body: %w", err)
+		}
+
+		req, err := http.NewRequest("POST", "https://oauth2.googleapis.com/token", bytes.NewBuffer(jsonBody))
+		if err != nil {
+			return "", fmt.Errorf("failed to create request: %w", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{Timeout: 30 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			return "", fmt.Errorf("failed to send request to token endpoint: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(resp.Body)
+			return "", fmt.Errorf("token endpoint returned status %d: %s", resp.StatusCode, string(body))
+		}
+
+		var tokenResponse GoogleTokenResponse
+
+		if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+			return "", fmt.Errorf("failed to decode token response: %w", err)
+		}
+
+		if tokenResponse.IdentityToken == "" {
+			return "", fmt.Errorf("token response does not contain an identity token")
+		}
+
+		return "Bearer " + tokenResponse.IdentityToken, nil
+
+	default:
+		return "", fmt.Errorf(`google: unknown token_type %q (want "access" or "id")`, g.TokenType)
+	}
 }
 
 func (g *Google) Canonicalize() {

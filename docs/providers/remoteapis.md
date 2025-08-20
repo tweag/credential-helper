@@ -173,7 +173,7 @@ Add to your `.tweag-credential-helper.json`:
                     },
                     {
                         "source": "google",
-                        "scope": "https://www.googleapis.com/auth/cloud-platform"
+                        "token_type": "jwt"
                     }
                 ]
             }
