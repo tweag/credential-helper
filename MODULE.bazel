@@ -50,7 +50,6 @@ bazel_dep(
     version = "0.32.0",
     dev_dependency = True,
 )
-
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.1", dev_dependency = True)
 
 bazel_binaries = use_extension(
