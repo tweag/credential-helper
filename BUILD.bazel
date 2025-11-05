@@ -1,4 +1,3 @@
-load("@buildifier_prebuilt//:rules.bzl", "buildifier")
 load("@tweag-credential-helper//bzl:defs.bzl", "credential_helper")
 
 credential_helper(
@@ -12,21 +11,6 @@ credential_helper(
 )
 
 # Only development and test targets below
-
-buildifier(
-    name = "buildifier.fix",
-    lint_mode = "fix",
-    mode = "fix",
-)
-
-buildifier(
-    name = "buildifier.check",
-    lint_mode = "warn",
-    lint_warnings = [
-        "-module-docstring",
-    ],
-    mode = "check",
-)
 
 filegroup(
     name = "all_files",
