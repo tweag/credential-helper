@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-13, macos-15, ubuntu-22.04, windows-2025]
+        runner: [macos-15, ubuntu-22.04, windows-2025]
     runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-13, macos-15, ubuntu-22.04, windows-2025]
+        runner: [macos-15, ubuntu-22.04, windows-2025]
     runs-on: ${{ matrix.runner }}
     permissions:
       id-token: write
