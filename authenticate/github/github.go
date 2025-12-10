@@ -168,7 +168,7 @@ type GitHubTokenSource struct {
 func (g *GitHubTokenSource) Token() (*oauth2.Token, error) {
 	chain := lookupchain.New(g.config.LookupChain)
 	token, err := chain.Lookup("default")
-	if lookupchain.IsNotFoundErr(err) && g.config.ReadConfigFile {
+	if err != nil && g.config.ReadConfigFile {
 		logging.Debugf("no token found in lookup chain - falling back to GitHub config file: %v", err)
 		const host = "github.com"
 		cfg, err := hostsFromFile(filepath.Join(configDir(), "hosts.yml"))
