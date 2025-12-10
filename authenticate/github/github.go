@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -116,10 +117,18 @@ func (g *GitHubResolver) Get(ctx context.Context, req api.GetCredentialsRequest)
 	if !token.Expiry.IsZero() {
 		expires = token.Expiry.UTC().Format(time.RFC3339)
 	}
+	var authString string
+
+	switch {
+		case strings.EqualFold(parsedURL.Host, "raw.githubusercontent.com"):
+			authString = "Basic " + base64.StdEncoding.EncodeToString([]byte(token.AccessToken + ":"))
+		default:
+			authString = "Bearer " + token.AccessToken
+	}
 	return api.GetCredentialsResponse{
 		Expires: expires,
 		Headers: map[string][]string{
-			"Authorization": {"Bearer " + token.AccessToken},
+			"Authorization": {authString},
 		},
 	}, nil
 }
