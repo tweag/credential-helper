@@ -31,7 +31,8 @@ type Config struct {
 func (c Config) FindHelper(uri string) (api.Helper, []byte, error) {
 	requested, err := url.Parse(uri)
 	if err != nil {
-		return nil, nil, err
+		logging.Errorf("%v", err)
+		return registry.HelperFromString("null"), nil, nil
 	}
 	if len(c.URLs) == 0 {
 		return nil, nil, errors.New("invalid configuration file: no helpers configured")
