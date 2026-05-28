@@ -31,6 +31,7 @@ Add to your `.bazelrc`:
 
 ```
 common --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
+common --credential_helper=*.storage.googleapis.com=%workspace%/tools/credential-helper
 ```
 
 Additionally, you can configure a GCS bucket to be a HTTP/1.1 remote cache:
@@ -38,6 +39,8 @@ Additionally, you can configure a GCS bucket to be a HTTP/1.1 remote cache:
 ```
 build --remote_cache=https://storage.googleapis.com/my_bucket
 ```
+
+Both path-style (`https://storage.googleapis.com/my_bucket/...`) and virtual-hosted-style (`https://my_bucket.storage.googleapis.com/...`) GCS URLs are supported.
 
 ## Troubleshooting
 
@@ -48,7 +51,7 @@ ERROR: Target parsing failed due to unexpected exception: java.io.IOException: E
 ```
 
 First, verify your credentials are valid: `gcloud auth application-default print-access-token`.
-Then ensure the user you are logged in as has access to the bucket using `gsutil cp gs://<BUCKET_NAME>/<OBJECT> ./<OUTPUT_FILENAME>` and check if the credential helper is configured in `.bazelrc` like this: `--credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper`.
+Then ensure the user you are logged in as has access to the bucket using `gsutil cp gs://<BUCKET_NAME>/<OBJECT> ./<OUTPUT_FILENAME>` and check if the credential helper is configured in `.bazelrc` like this: `--credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper` and, for virtual-hosted-style URLs, `--credential_helper=*.storage.googleapis.com=%workspace%/tools/credential-helper`.
 
 [adc]: https://cloud.google.com/docs/authentication/provide-credentials-adc
 [api-explorer-objects-get]: https://cloud.google.com/storage/docs/json_api/v1/objects/get
