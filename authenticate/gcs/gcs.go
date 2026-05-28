@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/tweag/credential-helper/api"
@@ -67,8 +68,9 @@ func (g *GCSResolver) Get(ctx context.Context, req api.GetCredentialsRequest) (a
 		return api.GetCredentialsResponse{}, errors.New("only https is supported")
 	}
 
-	if parsedURL.Hostname() != "storage.googleapis.com" {
-		return api.GetCredentialsResponse{}, errors.New("only storage.googleapis.com is supported")
+	host := strings.ToLower(parsedURL.Hostname())
+	if host != "storage.googleapis.com" && !strings.HasSuffix(host, ".storage.googleapis.com") {
+		return api.GetCredentialsResponse{}, errors.New("only storage.googleapis.com and *.storage.googleapis.com are supported")
 	}
 	if parsedURL.Port() != "" && parsedURL.Port() != "443" {
 		return api.GetCredentialsResponse{}, errors.New("only port 443 is supported")

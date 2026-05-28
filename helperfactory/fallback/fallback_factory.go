@@ -24,6 +24,8 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 	switch {
 	case strings.HasSuffix(u.Hostname(), ".amazonaws.com"):
 		return &authenticateS3.S3{}, nil
+	case strings.HasSuffix(u.Hostname(), ".storage.googleapis.com"):
+		fallthrough
 	case strings.EqualFold(u.Hostname(), "storage.googleapis.com"):
 		return &authenticateGCS.GCS{}, nil
 	case strings.EqualFold(u.Hostname(), "github.com"):

@@ -95,6 +95,7 @@ common --credential_helper=github.com=%workspace%/tools/credential-helper
 common --credential_helper=raw.githubusercontent.com=%workspace%/tools/credential-helper
 # GCS
 common --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
+common --credential_helper=*.storage.googleapis.com=%workspace%/tools/credential-helper
 # S3
 common --credential_helper=s3.amazonaws.com=%workspace%/tools/credential-helper
 common --credential_helper=*.s3.amazonaws.com=%workspace%/tools/credential-helper
@@ -124,8 +125,10 @@ common:windows --credential_helper=raw.githubusercontent.com=%workspace%/tools/c
 
 # Google Cloud Storage / GCS (Unix)
 common:unix --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper
+common:unix --credential_helper=*.storage.googleapis.com=%workspace%/tools/credential-helper
 # Google Cloud Storage / GCS (Windows)
 common:windows --credential_helper=storage.googleapis.com=%workspace%/tools/credential-helper.exe
+common:windows --credential_helper=*.storage.googleapis.com=%workspace%/tools/credential-helper.exe
 
 # Google Artifact Registry (Unix)
 common:unix --credential_helper=*.pkg.dev=%workspace%/tools/credential-helper
