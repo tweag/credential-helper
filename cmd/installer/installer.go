@@ -68,6 +68,12 @@ func hardlinkOrCopy(src, dst string) error {
 	if err := os.Link(src, dst); err == nil {
 		return nil
 	}
+
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("statting source file for copying: %w", err)
+	}
+
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("opening source file for copying: %w", err)
@@ -79,7 +85,13 @@ func hardlinkOrCopy(src, dst string) error {
 		return fmt.Errorf("opening destination file for copying: %w", err)
 	}
 	defer dstFile.Close()
+
 	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("copying source file to destination: %w", err)
+	}
+
+	err := os.Chmod(dst, srcInfo.Mode().Perm())
 	return err
 }
 
