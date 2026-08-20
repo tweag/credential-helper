@@ -9,6 +9,7 @@ import (
 	authenticateGAR "github.com/tweag/credential-helper/authenticate/gar"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
+	authenticateGoogleSecretManager "github.com/tweag/credential-helper/authenticate/googlesecretmanager"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
 	authenticateOCI "github.com/tweag/credential-helper/authenticate/oci"
 	authenticateRemoteAPIs "github.com/tweag/credential-helper/authenticate/remoteapis"
@@ -26,6 +27,8 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		return &authenticateS3.S3{}, nil
 	case strings.EqualFold(u.Hostname(), "storage.googleapis.com"):
 		return &authenticateGCS.GCS{}, nil
+	case strings.EqualFold(u.Hostname(), "secretmanager.googleapis.com"):
+		return &authenticateGoogleSecretManager.GoogleSecretManager{}, nil
 	case strings.EqualFold(u.Hostname(), "github.com"):
 		fallthrough
 	case strings.HasSuffix(strings.ToLower(u.Host), ".github.com"):
