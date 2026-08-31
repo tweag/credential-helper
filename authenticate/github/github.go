@@ -51,6 +51,7 @@ The credential helper can be used to download any assets GitHub hosts, including
   - source tarballs (github.com/<org>/<repo>/archive/refs/tags/v1.2.3.tar.gz)
   - release assets (github.com/<org>/<repo>/releases/download/v1.2.3/<file>)
   - container images from ghcr.io (doc)
+  - GitHub Enterprise Cloud with data residency (*.ghe.com)
   ... and more.
 
 With credentials, you are also less likely to be blocked by GitHub rate limits, even when accessing public repositories.
@@ -103,10 +104,12 @@ func (g *GitHubResolver) Get(ctx context.Context, req api.GetCredentialsRequest)
 		// this is fine
 	case strings.HasSuffix(strings.ToLower(parsedURL.Host), ".github.com"):
 		// this is fine
+	case strings.HasSuffix(strings.ToLower(parsedURL.Host), ".ghe.com"):
+		// this is fine (GitHub Enterprise Cloud with data residency)
 	case strings.EqualFold(parsedURL.Host, "raw.githubusercontent.com"):
 		// this is fine
 	default:
-		return api.GetCredentialsResponse{}, errors.New("only github.com and subdomains are supported")
+		return api.GetCredentialsResponse{}, errors.New("only github.com, its subdomains, and *.ghe.com are supported")
 	}
 
 	token, err := g.tokenSource.Token()

@@ -9,6 +9,7 @@ The credential helper can be used to download any assets GitHub hosts, including
 - source tarballs (`github.com/<org>/<repo>/archive/refs/tags/v1.2.3.tar.gz`)
 - release assets (`github.com/<org>/<repo>/releases/download/v1.2.3/<file>`)
 - container images from `ghcr.io` ([doc][doc-oci])
+- GitHub Enterprise Cloud with data residency (`*.ghe.com`)
 - ... and more.
 
 With credentials, you are also less likely to be blocked by GitHub rate limits, even when accessing public repositories.
