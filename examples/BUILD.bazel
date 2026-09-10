@@ -27,7 +27,10 @@ bazel_integration_tests(
         "AZURE_CLIENT_SECRET",
     ],
     bazel_versions = bazel_binaries.versions.all,
-    env = {"CREDENTIAL_HELPER_LOGGING": "debug"},
+    env = {
+        "CREDENTIAL_HELPER_LOGGING": "debug",
+        "GO_HTTPBIN_RLOCATION_PATH": "$(rlocationpath //bzl/private/httpbin:httpbin)",
+    },
     test_runner = "//bzl/private/integration_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("full") +
                       integration_test_utils.glob_workspace_files("testing") + [
@@ -39,11 +42,13 @@ bazel_integration_tests(
 bazel_integration_tests(
     name = "customized_test",
     bazel_versions = bazel_binaries.versions.all,
+    data = ["//bzl/private/httpbin"],
     # This integration test does not use real credentials.
     # It is safe to enable debug logging by default.
     env = {
         "CREDENTIAL_HELPER_LOGGING": "debug",
         "BAZEL_INTEGRATION_TEST_INSTALL_TARGET": "//:custom_installer",
+        "GO_HTTPBIN_RLOCATION_PATH": "$(rlocationpath //bzl/private/httpbin:httpbin)",
     },
     test_runner = "//bzl/private/integration_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("customized") +
