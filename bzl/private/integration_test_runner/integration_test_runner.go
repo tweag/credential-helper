@@ -255,8 +255,8 @@ func copyFSWithSymlinks(destination, source string) error {
 	})
 }
 
-func runHttpbinServer() error {
-	binaryPath, err := runfiles.Rlocation("+_repo_rules+go_httpbin/cmd/go-httpbin/go-httpbin_/go-httpbin")
+func runHttpbinServer(goHttpBinRlocation string) error {
+	binaryPath, err := runfiles.Rlocation(goHttpBinRlocation)
 	if err != nil {
 		return fmt.Errorf("failed to find go-httpbin binary: %v\n", err)
 	}
@@ -297,9 +297,16 @@ func main() {
 		panic(err)
 	}
 
-	err := runHttpbinServer()
+	goHttpRLocationPath := "GO_HTTPBIN_RLOCATION_PATH"
+	httpBinLocation, ok := os.LookupEnv(goHttpRLocationPath)
+	if !ok {
+		fmt.Println("missing environment variable: ", goHttpRLocationPath)
+		os.Exit(1)
+	}
+	
+	err := runHttpbinServer(httpBinLocation)
 	if err != nil {
-		fmt.Println("failed to run go-httpbin")
+		fmt.Println("failed to run go-httpbin:\n", err)
 		os.Exit(1)
 	}
 
