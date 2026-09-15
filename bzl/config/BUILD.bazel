@@ -33,6 +33,14 @@ string_flag(
     build_setting_default = "%workspace%\\tools\\credential-helper.exe",
 )
 
+string_flag(
+    name = "version_suffix",
+    # This allows a consumer of this repository to append a string to the binary's
+    # version string, e.g. ".name.1", to allow tracking local modifications.
+    build_setting_default = "",
+    make_variable = "VERSION_SUFFIX",
+)
+
 config_setting(
     name = "helper_build_mode_prebuilt",
     flag_values = {
