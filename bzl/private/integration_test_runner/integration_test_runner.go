@@ -299,7 +299,8 @@ func main() {
 
 	err := runHttpbinServer()
 	if err != nil {
-		fmt.Println("failed to run go-httpbin")
+		fmt.Println("failed to run go-httpbin:")
+		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 
