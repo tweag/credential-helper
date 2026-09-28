@@ -68,17 +68,33 @@ func hardlinkOrCopy(src, dst string) error {
 	if err := os.Link(src, dst); err == nil {
 		return nil
 	}
+	return copyFile(src, dst)
+}
+
+// copyFile copies src to dst, preserving the source's permission bits. The
+// hardlink fast path keeps them implicitly, but a copy (e.g. when source and
+// destination are on different filesystems) must carry over the executable
+// bit for the installed helper to be runnable.
+func copyFile(src, dst string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("opening source file for copying: %w", err)
 	}
 	defer srcFile.Close()
 
-	dstFile, err := os.Create(dst)
+	srcInfo, err := srcFile.Stat()
+	if err != nil {
+		return fmt.Errorf("stating source file for copying: %w", err)
+	}
+
+	dstFile, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcInfo.Mode().Perm())
 	if err != nil {
 		return fmt.Errorf("opening destination file for copying: %w", err)
 	}
 	defer dstFile.Close()
+	if err := dstFile.Chmod(srcInfo.Mode().Perm()); err != nil {
+		return fmt.Errorf("setting destination file permissions: %w", err)
+	}
 	_, err = io.Copy(dstFile, srcFile)
 	return err
 }
