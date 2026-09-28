@@ -1,4 +1,4 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "installer",
@@ -6,6 +6,12 @@ go_library(
     importpath = "github.com/tweag/credential-helper/cmd/installer",
     visibility = ["//visibility:public"],
     deps = ["//agent/locate"],
+)
+
+go_test(
+    name = "installer_test",
+    srcs = ["installer_test.go"],
+    embed = [":installer"],
 )
 
 filegroup(
