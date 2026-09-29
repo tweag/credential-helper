@@ -256,7 +256,7 @@ func copyFSWithSymlinks(destination, source string) error {
 }
 
 func runHttpbinServer() error {
-	binaryPath, err := runfiles.Rlocation("+_repo_rules+go_httpbin/cmd/go-httpbin/go-httpbin_/go-httpbin")
+	binaryPath, err := runfiles.Rlocation("+http_archive+go_httpbin/cmd/go-httpbin/go-httpbin_/go-httpbin")
 	if err != nil {
 		return fmt.Errorf("failed to find go-httpbin binary: %v\n", err)
 	}
