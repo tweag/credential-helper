@@ -1,6 +1,6 @@
 module github.com/tweag/credential-helper
 
-go 1.24.2
+go 1.24.12
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.0
