@@ -1,6 +1,6 @@
 module github.com/tweag/credential-helper/examples/customized
 
-go 1.23.3
+go 1.24.12
 
 require modernc.org/sqlite v1.34.1
 
