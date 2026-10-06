@@ -35,6 +35,11 @@ jobs:
       draft: true
       prerelease: false
       release_files: tweag-credential-helper-*.tar.gz
+      # Use markdown-extract to pull release notes from the changelog, 
+      # and store in the given file before emission to stdout for release_ruleset.
+      use_changelog_release_notes: true
+      changelog_file: CHANGELOG.md
+      release_notes_intermediate_file: release_notes_from_changelog.md
   publish:
     name: Make draft release
     needs: release
