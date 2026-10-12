@@ -91,7 +91,7 @@ check_file_hash_test(
     name = "check_blob_storage",
     args = [
         "$(location @hello_world_blob_storage//file)",
-        "c98c24b677eff44860afea6f493bbaec5bb1c4cbb209c6fc2bbb47f66ff2ad31",
+        "81e455883ec5c65337edd7bd1045b4fea50fef093b40636d96aa8001ebd54910",
     ],
     data = ["@hello_world_blob_storage//file"],
 )
