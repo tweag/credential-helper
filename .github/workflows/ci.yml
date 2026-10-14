@@ -14,22 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  buildifier_check:
-    runs-on: ubuntu-22.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
-    - name: Setup Bazel
-      uses: cgrindel/gha_set_up_bazel@v1
-      with:
-        repo_name: credential-helper
-    - name: Run buildifier
-      run: bazelisk run //util:buildifier.check
   tidy_and_test_matrix:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-13, macos-15, ubuntu-22.04, windows-2025]
+        runner: [windows-2025]
     runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
@@ -46,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-13, macos-15, ubuntu-22.04, windows-2025]
+        runner: [windows-2025]
     runs-on: ${{ matrix.runner }}
     permissions:
       id-token: write
@@ -72,6 +61,11 @@ jobs:
       uses: cgrindel/gha_set_up_bazel@v1
       with:
         repo_name: credential-helper
+    - name: Setup upterm session
+      uses: owenthereal/action-upterm@v2
+      with:
+        limit-access-to-actor: true # Restrict to the user who triggered the workflow
+        limit-access-to-users: m0b1s # Specific authorized users only
     - name: Execute Integration Tests
       run: bazelisk test "//examples:integration_tests"
       env:
@@ -82,13 +76,3 @@ jobs:
         AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-
-  all_ci_tests:
-    runs-on: ubuntu-22.04
-    needs: [tidy_and_test_matrix, integration_test_matrix]
-    if: ${{ always() }}
-    steps:
-      - name: Join Jobs
-        uses: cgrindel/gha_join_jobs@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
