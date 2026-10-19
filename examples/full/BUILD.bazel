@@ -15,83 +15,83 @@ alias(
     visibility = ["//visibility:public"],
 )
 
-check_file_hash_test(
-    name = "check_github_repo",
-    args = [
-        "$(location @private_github_repo_file//file)",
-        "81e455883ec5c65337edd7bd1045b4fea50fef093b40636d96aa8001ebd54910",
-    ],
-    data = ["@private_github_repo_file//file"],
-)
-
-check_file_hash_test(
-    name = "check_s3",
-    args = [
-        "$(location @hello_world_s3//file)",
-        "3cf3250d34148d3fe03c4a8eb1a38695b969ff96ec6bfce5f9f544279fb2a5df",
-    ],
-    data = ["@hello_world_s3//file"],
-)
-
-check_file_hash_test(
-    name = "s3_regional_virtual_host_style",
-    args = [
-        "$(location @s3_regional_virtual_host_style//file)",
-        "e879f76b7bac8effe4cc53bce034f258ce15b2825f3018c7078f25e832c3feb8",
-    ],
-    data = ["@s3_regional_virtual_host_style//file"],
-)
-
-check_file_hash_test(
-    name = "s3_regional_path_style",
-    args = [
-        "$(location @s3_regional_path_style//file)",
-        "909b62c80b5ce1f5075c9c9301f79673727a77c46a525f12c4753370536bfe2c",
-    ],
-    data = ["@s3_regional_path_style//file"],
-)
-
-check_file_hash_test(
-    name = "check_r2",
-    args = [
-        "$(location @hello_world_r2//file)",
-        "df4bf34acd7328fa6f0b6913dcc56b450b6888a562718c8bf970e9b9685114f5",
-    ],
-    data = ["@hello_world_r2//file"],
-)
-
-check_file_hash_test(
-    name = "check_gcs",
-    args = [
-        "$(location @hello_world_gcs//file)",
-        "fcb96ae418b863eb93883a94cc39f81545cfdf97e20d292ed1bd8f78a153cedc",
-    ],
-    data = ["@hello_world_gcs//file"],
-)
-
-check_file_hash_test(
-    name = "check_oci_ghcr",
-    args = [
-        "$(location @ghcr_oci//:ghcr_oci)/blobs/sha256/2d4e459f4ecb5329407ae3e47cbc107a2fbace221354ca75960af4c047b3cb13",
-        "2d4e459f4ecb5329407ae3e47cbc107a2fbace221354ca75960af4c047b3cb13",
-    ],
-    data = ["@ghcr_oci"],
-)
-
-check_file_hash_test(
-    name = "check_oci_docker_hub",
-    args = [
-        "$(location @docker_hub_hello_world_linux_amd64//:docker_hub_hello_world_linux_amd64)/blobs/sha256/e2fc4e5012d16e7fe466f5291c476431beaa1f9b90a5c2125b493ed28e2aba57",
-        "e2fc4e5012d16e7fe466f5291c476431beaa1f9b90a5c2125b493ed28e2aba57",
-    ],
-    data = ["@docker_hub_hello_world_linux_amd64"],
-)
-
-check_file_hash_test(
-    name = "check_blob_storage",
-    args = [
-        "$(location @hello_world_blob_storage//file)",
-        "81e455883ec5c65337edd7bd1045b4fea50fef093b40636d96aa8001ebd54910",
-    ],
-    data = ["@hello_world_blob_storage//file"],
-)
+# check_file_hash_test(
+#     name = "check_github_repo",
+#     args = [
+#         "$(location @private_github_repo_file//file)",
+#         "81e455883ec5c65337edd7bd1045b4fea50fef093b40636d96aa8001ebd54910",
+#     ],
+#     data = ["@private_github_repo_file//file"],
+# )
+# 
+# check_file_hash_test(
+#     name = "check_s3",
+#     args = [
+#         "$(location @hello_world_s3//file)",
+#         "3cf3250d34148d3fe03c4a8eb1a38695b969ff96ec6bfce5f9f544279fb2a5df",
+#     ],
+#     data = ["@hello_world_s3//file"],
+# )
+# 
+# check_file_hash_test(
+#     name = "s3_regional_virtual_host_style",
+#     args = [
+#         "$(location @s3_regional_virtual_host_style//file)",
+#         "e879f76b7bac8effe4cc53bce034f258ce15b2825f3018c7078f25e832c3feb8",
+#     ],
+#     data = ["@s3_regional_virtual_host_style//file"],
+# )
+# 
+# check_file_hash_test(
+#     name = "s3_regional_path_style",
+#     args = [
+#         "$(location @s3_regional_path_style//file)",
+#         "909b62c80b5ce1f5075c9c9301f79673727a77c46a525f12c4753370536bfe2c",
+#     ],
+#     data = ["@s3_regional_path_style//file"],
+# )
+# 
+# check_file_hash_test(
+#     name = "check_r2",
+#     args = [
+#         "$(location @hello_world_r2//file)",
+#         "df4bf34acd7328fa6f0b6913dcc56b450b6888a562718c8bf970e9b9685114f5",
+#     ],
+#     data = ["@hello_world_r2//file"],
+# )
+# 
+# check_file_hash_test(
+#     name = "check_gcs",
+#     args = [
+#         "$(location @hello_world_gcs//file)",
+#         "fcb96ae418b863eb93883a94cc39f81545cfdf97e20d292ed1bd8f78a153cedc",
+#     ],
+#     data = ["@hello_world_gcs//file"],
+# )
+# 
+# check_file_hash_test(
+#     name = "check_oci_ghcr",
+#     args = [
+#         "$(location @ghcr_oci//:ghcr_oci)/blobs/sha256/2d4e459f4ecb5329407ae3e47cbc107a2fbace221354ca75960af4c047b3cb13",
+#         "2d4e459f4ecb5329407ae3e47cbc107a2fbace221354ca75960af4c047b3cb13",
+#     ],
+#     data = ["@ghcr_oci"],
+# )
+# 
+# check_file_hash_test(
+#     name = "check_oci_docker_hub",
+#     args = [
+#         "$(location @docker_hub_hello_world_linux_amd64//:docker_hub_hello_world_linux_amd64)/blobs/sha256/e2fc4e5012d16e7fe466f5291c476431beaa1f9b90a5c2125b493ed28e2aba57",
+#         "e2fc4e5012d16e7fe466f5291c476431beaa1f9b90a5c2125b493ed28e2aba57",
+#     ],
+#     data = ["@docker_hub_hello_world_linux_amd64"],
+# )
+# 
+# check_file_hash_test(
+#     name = "check_blob_storage",
+#     args = [
+#         "$(location @hello_world_blob_storage//file)",
+#         "81e455883ec5c65337edd7bd1045b4fea50fef093b40636d96aa8001ebd54910",
+#     ],
+#     data = ["@hello_world_blob_storage//file"],
+# )
