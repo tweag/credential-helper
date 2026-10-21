@@ -62,7 +62,7 @@ jobs:
         aws-region: us-east-1
     - name: Authenticate with GCP
       id: gauth
-      uses: google-github-actions/auth@v1
+      uses: google-github-actions/auth@v3
       with:
         workload_identity_provider: "projects/341646648187/locations/global/workloadIdentityPools/github-workload-pool/providers/github-provider"
         service_account: "github-service-account@git-credential-helper-dev.iam.gserviceaccount.com"
