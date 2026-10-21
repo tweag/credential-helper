@@ -9,7 +9,8 @@ updates:
 
   # keep bazel modules in examples up-to-date
   - package-ecosystem: "bazel"
-    directory: "examples/*"
+    directories:
+      - "examples/*"
     schedule:
       # Check for updates to GitHub Actions every weekday
       interval: "daily"
