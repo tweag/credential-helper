@@ -19,7 +19,8 @@ import (
 func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		return nil, err
+		logging.Errorf("%v", err)
+		return authenticateNull.Null{}, nil
 	}
 	switch {
 	case strings.HasSuffix(u.Hostname(), ".amazonaws.com"):
