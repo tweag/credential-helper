@@ -18,9 +18,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Setup Bazel
-      uses: cgrindel/gha_set_up_bazel@v1
+      uses: cgrindel/gha_set_up_bazel@0a8ec4049a3169b12fae56345c90f483cff54945 # v1.0.6
       with:
         repo_name: credential-helper
     - name: Run buildifier
@@ -33,9 +33,9 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
     - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Setup Bazel
-      uses: bazel-contrib/setup-bazel@4fd964a13a440a8aeb0be47350db2fc640f19ca8 # 0.15.0
+      uses: bazel-contrib/setup-bazel@104e3eea9447cdaa4b00d0fb46191a3985d26ab3 # 0.19.1
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
@@ -54,22 +54,22 @@ jobs:
       packages: read
     steps:
     - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v3
+      uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
       with:
         role-to-assume: arn:aws:iam::381492153904:role/git-s3-access
         aws-region: us-east-1
     - name: Authenticate with GCP
       id: gauth
-      uses: google-github-actions/auth@v1
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
       with:
         workload_identity_provider: "projects/341646648187/locations/global/workloadIdentityPools/github-workload-pool/providers/github-provider"
         service_account: "github-service-account@git-credential-helper-dev.iam.gserviceaccount.com"
         export_environment_variables: true
         create_credentials_file: true
     - name: Setup Bazel
-      uses: cgrindel/gha_set_up_bazel@v1
+      uses: cgrindel/gha_set_up_bazel@0a8ec4049a3169b12fae56345c90f483cff54945 # v1.0.6
       with:
         repo_name: credential-helper
     - name: Execute Integration Tests
@@ -89,6 +89,6 @@ jobs:
     if: ${{ always() }}
     steps:
       - name: Join Jobs
-        uses: cgrindel/gha_join_jobs@v1
+        uses: cgrindel/gha_join_jobs@605424defceef3181c9fde3df903ea8ec35e267a # v1.5.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
