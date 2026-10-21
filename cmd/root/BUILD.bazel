@@ -4,6 +4,9 @@ go_library(
     name = "root",
     srcs = ["root.go"],
     importpath = "github.com/tweag/credential-helper/cmd/root",
+    toolchains = [
+        "//bzl/config:version_suffix",
+    ],
     visibility = ["//visibility:public"],
     x_defs = {"version": module_version() + "$(VERSION_SUFFIX)"},
     deps = [
@@ -16,9 +19,6 @@ go_library(
         "//cmd/setup",
         "//config",
         "//logging",
-    ],
-    toolchains = [
-        "//bzl/config:version_suffix",
     ],
 )
 
