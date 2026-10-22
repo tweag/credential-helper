@@ -11,6 +11,17 @@ updates:
   - package-ecosystem: "bazel"
     directories:
       - "examples/*"
+    groups:
+      major-by-dependency:
+        group-by: dependency-name
+        update-types:
+          - "major"
+
+      minor-patch-by-dependency:
+        group-by: dependency-name
+        update-types:
+          - "minor"
+          - "patch"
     schedule:
       # Check for updates to GitHub Actions every weekday
       interval: "daily"
