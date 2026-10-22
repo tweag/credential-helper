@@ -58,7 +58,7 @@ The configuration in `.tweag-credential-helper.json` supports the following valu
         },
         {
             "source": "keyring",
-            "name": "gh:github.com",
+            "service": "gh:github.com",
             "binding": "default"
         }
     ]
