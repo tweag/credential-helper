@@ -1,0 +1,58 @@
+# Create a draft release when triggered via Github's UI or Github CLI
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 0.0.9)'
+        required: true
+        type: string
+
+permissions:
+  attestations: write
+  contents: write
+  id-token: write
+
+jobs:
+  check_version:
+    name: Check version
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if ! [[ '${{ inputs.version }}' =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
+             echo '${{ inputs.version }} does not match expected format `major.minor.patch`' >&2
+             exit 1
+           fi
+  release:
+    name: Prepare Release
+    needs: check_version
+    # https://github.com/bazel-contrib/.github/blob/master/.github/workflows/release_ruleset.yaml
+    uses: vreuter/.github/.github/workflows/release_ruleset.yaml@vr/markdown-extract
+    with:
+      tag_name: v${{ inputs.version }}
+      # Support GitHub immutable releases.
+      draft: true
+      prerelease: false
+      release_files: tweag-credential-helper-*.tar.gz
+      # Use markdown-extract to pull release notes from the changelog, 
+      # and store in the given file before emission to stdout for release_ruleset.
+      use_changelog_release_notes: true
+      changelog_file: CHANGELOG.md
+      release_notes_intermediate_file: release_notes_from_changelog.md
+  publish:
+    name: Make draft release
+    needs: release
+    uses: ./.github/workflows/publish.yml
+    with:
+      tag_name: v${{ inputs.version }}
+    secrets:
+      publish_token: ${{ secrets.BCR_PUBLISH_TOKEN }}
+  finalize:
+    name: Publish release to BCR
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
+        with:
+          tag_name: v${{ inputs.version }}
