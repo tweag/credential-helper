@@ -6,6 +6,7 @@ import (
 	authenticateGAR "github.com/tweag/credential-helper/authenticate/gar"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
+	authenticateGoogleSecretManager "github.com/tweag/credential-helper/authenticate/googlesecretmanager"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
 	authenticateOCI "github.com/tweag/credential-helper/authenticate/oci"
 	authenticateRemoteAPIs "github.com/tweag/credential-helper/authenticate/remoteapis"
@@ -14,14 +15,15 @@ import (
 
 var singleton = Helpers{
 	Map: map[string]api.Helper{
-		"gcs":        &authenticateGCS.GCS{},
-		"gar":        &authenticateGAR.GAR{},
-		"azstorage":  &authenticateAzStorage.AzStorage{},
-		"github":     &authenticateGitHub.GitHub{},
-		"null":       &authenticateNull.Null{},
-		"oci":        authenticateOCI.NewFallbackOCI(),
-		"remoteapis": &authenticateRemoteAPIs.RemoteAPIs{},
-		"s3":         &authenticateS3.S3{},
+		"gcs":                 &authenticateGCS.GCS{},
+		"gar":                 &authenticateGAR.GAR{},
+		"azstorage":           &authenticateAzStorage.AzStorage{},
+		"github":              &authenticateGitHub.GitHub{},
+		"googlesecretmanager": &authenticateGoogleSecretManager.GoogleSecretManager{},
+		"null":                &authenticateNull.Null{},
+		"oci":                 authenticateOCI.NewFallbackOCI(),
+		"remoteapis":          &authenticateRemoteAPIs.RemoteAPIs{},
+		"s3":                  &authenticateS3.S3{},
 	},
 }
 
