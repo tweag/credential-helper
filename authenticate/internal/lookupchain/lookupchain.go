@@ -9,22 +9,28 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"reflect"
 	"strings"
 	"time"
 
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	secretmanagerpb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	keyring "github.com/zalando/go-keyring"
 	"golang.org/x/oauth2"
 	gauth "golang.org/x/oauth2/google"
 	idtoken "google.golang.org/api/idtoken"
 	option "google.golang.org/api/option"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
-	SourceEnv     = "env"
-	SourceKeyring = "keyring"
-	SourceStatic  = "static"
-	SourceGoogle  = "google"
+	SourceEnv              = "env"
+	SourceKeyring          = "keyring"
+	SourceStatic           = "static"
+	SourceGoogle           = "google"
+	SourceGCPSecretManager = "gcp_secretmanager"
 )
 
 type LookupChain struct {
@@ -119,6 +125,12 @@ func (c *LookupChain) sourceFor(entry ConfigEntry) (Source, error) {
 			return nil, fmt.Errorf("unmarshalling google source: %w", err)
 		}
 		source = &google
+	case SourceGCPSecretManager:
+		var gsm GCPSecretManager
+		if err := decoder.Decode(&gsm); err != nil {
+			return nil, fmt.Errorf("unmarshalling gcp_secretmanager source: %w", err)
+		}
+		source = &gsm
 	default:
 		return nil, fmt.Errorf("unknown source %q", entry.Source)
 	}
@@ -477,4 +489,184 @@ func (e *NotFoundErr) Error() string {
 func IsNotFoundErr(err error) bool {
 	var nfe *NotFoundErr
 	return errors.As(err, &nfe)
+}
+
+type GCPSecretManager struct {
+	// Source must be "gcp_secretmanager".
+	Source string `json:"source"`
+	// Secret is the fully-qualified secret version resource name, e.g.
+	// "projects/<project>/secrets/<name>/versions/latest".
+	Secret string `json:"secret"`
+	// Binding binds the value to a well-known name in the helper.
+	Binding string `json:"binding,omitempty"`
+
+	// accessor is injectable for testing. When nil, the real Secret Manager
+	// client is used with Application Default Credentials.
+	accessor func(ctx context.Context, name string) (string, error)
+}
+
+func (g *GCPSecretManager) Lookup(binding string) (string, error) {
+	if g.Binding != binding {
+		return "", &NotFoundErr{}
+	}
+	if g.Secret == "" {
+		return "", fmt.Errorf("gcp_secretmanager: secret must be set")
+	}
+	access := g.accessor
+	if access == nil {
+		access = accessGCPSecret
+	}
+	val, err := access(context.Background(), g.Secret)
+	if err != nil {
+		return "", fmt.Errorf("gcp_secretmanager: accessing %q: %w", g.Secret, err)
+	}
+	return val, nil
+}
+
+func (g *GCPSecretManager) Canonicalize() {
+	g.Source = SourceGCPSecretManager
+	if g.Binding == "" {
+		g.Binding = "default"
+	}
+}
+
+func (g *GCPSecretManager) SetupInstructions(binding string) (string, bool) {
+	if g.Binding != binding {
+		return "", false
+	}
+	return fmt.Sprintf(" - Ensure the secret %q is readable by your Google identity (run `gcloud auth login`, or provide Application Default Credentials such as a service account with roles/secretmanager.secretAccessor)", g.Secret), true
+}
+
+const cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"
+
+func accessGCPSecret(ctx context.Context, name string) (string, error) {
+	_, adcErr := gauth.FindDefaultCredentials(ctx, cloudPlatformScope)
+	return accessGCPSecretWithFallback(ctx, name, adcErr, &gcloudCLITokenSource{}, accessGCPSecretAs)
+}
+
+// accessGCPSecretWithFallback accesses the secret with Application Default
+// Credentials when they are available, and falls back to the given token
+// source (backed by `gcloud auth login`) when ADC is unavailable — or when
+// ADC resolves to an identity that is denied access to the secret, which is
+// the norm on GCE machines where the metadata server always supplies the
+// VM's service account.
+func accessGCPSecretWithFallback(ctx context.Context, name string, adcErr error, fallback oauth2.TokenSource, access func(context.Context, string, gcpSecretAuth) (string, error)) (string, error) {
+	auth, err := chooseGCPSecretAuth(ctx, name, adcErr, fallback)
+	if err != nil {
+		return "", err
+	}
+	payload, err := access(ctx, name, auth)
+	if err == nil || !auth.useADC || status.Code(err) != codes.PermissionDenied {
+		return payload, err
+	}
+	auth, retryErr := chooseGCPSecretAuth(ctx, name, err, fallback)
+	if retryErr != nil {
+		return "", retryErr
+	}
+	payload, retryErr = access(ctx, name, auth)
+	if retryErr != nil {
+		return "", fmt.Errorf("with gcloud CLI credentials after ADC identity was denied (%v): %w", err, retryErr)
+	}
+	return payload, nil
+}
+
+func accessGCPSecretAs(ctx context.Context, name string, auth gcpSecretAuth) (string, error) {
+	var opts []option.ClientOption
+	if !auth.useADC {
+		opts = append(opts, option.WithTokenSource(auth.tokenSource))
+		// A bare user access token carries no quota project, which Secret
+		// Manager requires; bill the project that owns the secret.
+		if auth.quotaProject != "" {
+			opts = append(opts, option.WithQuotaProject(auth.quotaProject))
+		}
+	}
+	client, err := secretmanager.NewClient(ctx, opts...)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+	resp, err := client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{Name: name})
+	if err != nil {
+		return "", err
+	}
+	return string(resp.GetPayload().GetData()), nil
+}
+
+// gcpSecretAuth describes how the Secret Manager client authenticates: via
+// Application Default Credentials, or via an explicit token source and quota
+// project.
+type gcpSecretAuth struct {
+	useADC       bool
+	tokenSource  oauth2.TokenSource
+	quotaProject string
+}
+
+// chooseGCPSecretAuth prefers Application Default Credentials (adcErr is nil
+// when they are usable) and falls back to the given token source, which
+// draws on the user credentials established by `gcloud auth login`. The
+// fallback token is minted eagerly so that a missing gcloud login surfaces
+// here as an actionable error instead of a failed API call later.
+func chooseGCPSecretAuth(_ context.Context, secretName string, adcErr error, fallback oauth2.TokenSource) (gcpSecretAuth, error) {
+	if adcErr == nil {
+		return gcpSecretAuth{useADC: true}, nil
+	}
+	tok, err := fallback.Token()
+	if err != nil {
+		return gcpSecretAuth{}, fmt.Errorf("no usable Google credentials: Application Default Credentials could not be used (%v) and the gcloud CLI fallback failed (%v); run `gcloud auth login` and retry", adcErr, err)
+	}
+	return gcpSecretAuth{
+		tokenSource:  oauth2.ReuseTokenSource(tok, fallback),
+		quotaProject: quotaProjectOfSecret(secretName),
+	}, nil
+}
+
+// quotaProjectOfSecret extracts the project id from a fully-qualified secret
+// version resource name ("projects/<project>/secrets/..."). It returns ""
+// when the name does not follow that form.
+func quotaProjectOfSecret(secretName string) string {
+	rest, ok := strings.CutPrefix(secretName, "projects/")
+	if !ok {
+		return ""
+	}
+	project, _, ok := strings.Cut(rest, "/")
+	if !ok {
+		return ""
+	}
+	return project
+}
+
+// gcloudCLITokenSource mints Google access tokens by invoking the gcloud CLI,
+// using the credentials from `gcloud auth login`. It serves as a fallback for
+// developer workstations where Application Default Credentials were never set
+// up.
+type gcloudCLITokenSource struct {
+	// run is injectable for testing. When nil, the real gcloud CLI is invoked.
+	run func(ctx context.Context) ([]byte, error)
+}
+
+func (s *gcloudCLITokenSource) Token() (*oauth2.Token, error) {
+	run := s.run
+	if run == nil {
+		run = runGcloudPrintAccessToken
+	}
+	out, err := run(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("minting access token via gcloud CLI: %w", err)
+	}
+	token := strings.TrimSpace(string(out))
+	if token == "" {
+		return nil, errors.New("gcloud CLI returned an empty access token")
+	}
+	return &oauth2.Token{AccessToken: token}, nil
+}
+
+func runGcloudPrintAccessToken(ctx context.Context) ([]byte, error) {
+	var stdout, stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, "gcloud", "auth", "print-access-token")
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("running `gcloud auth print-access-token`: %w (stderr: %s)", err, strings.TrimSpace(stderr.String()))
+	}
+	return stdout.Bytes(), nil
 }
