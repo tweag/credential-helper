@@ -3,6 +3,7 @@ package installer
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -25,6 +26,10 @@ func TestCopyFilePreservesExecutableBit(t *testing.T) {
 	}
 	if string(got) != content {
 		t.Errorf("destination content = %q, want %q", got, content)
+	}
+	if runtime.GOOS == "windows" {
+		// Windows has no executable permission bits to preserve.
+		return
 	}
 	info, err := os.Stat(dst)
 	if err != nil {
