@@ -8,6 +8,7 @@ release_files = [
     "//authenticate/gcs:all_files",
     "//authenticate/gar:all_files",
     "//authenticate/azstorage:all_files",
+    "//authenticate/chainguardapk:all_files",
     "//authenticate/github:all_files",
     "//authenticate/internal:all_files",
     "//authenticate/internal/helperconfig:all_files",
