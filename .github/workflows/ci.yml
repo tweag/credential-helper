@@ -43,6 +43,8 @@ jobs:
     - name: Execute Tests
       run: bazelisk test //...
   integration_test_matrix:
+    # skip integration tests for fork PRs (secrets won't be available)
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     strategy:
       fail-fast: false
       matrix:
@@ -91,11 +93,11 @@ jobs:
         AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
   all_ci_tests:
-    runs-on: ubuntu-22.04
-    needs: [tidy_and_test_matrix, integration_test_matrix]
-    if: ${{ always() }}
+    name: Required CI
+    if: ${{ always() && !cancelled() }}
+    needs: [buildifier_check, tidy_and_test_matrix, integration_test_matrix]
+    runs-on: ubuntu-slim
     steps:
-      - name: Join Jobs
-        uses: cgrindel/gha_join_jobs@605424defceef3181c9fde3df903ea8ec35e267a # v1.5.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fail if a dependency failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
