@@ -43,6 +43,8 @@ jobs:
     - name: Execute Tests
       run: bazelisk test //...
   integration_test_matrix:
+    # skip integration tests for fork PRs (secrets won't be available)
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     strategy:
       fail-fast: false
       matrix:
@@ -72,10 +74,17 @@ jobs:
       uses: cgrindel/gha_set_up_bazel@0a8ec4049a3169b12fae56345c90f483cff54945 # v1.0.6
       with:
         repo_name: credential-helper
+    - name: Generate GitHub token
+      id: app-token
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ secrets.TWEAG_CREDENTIALS_HELPER_CI_APP_CLIENT_ID }}
+        private-key: ${{ secrets.TWEAG_CREDENTIALS_HELPER_CI_APP_KEY }}
+        repositories: credential-helper-private
     - name: Execute Integration Tests
       run: bazelisk test "//examples:integration_tests"
       env:
-        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
         GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
         R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
@@ -84,11 +93,11 @@ jobs:
         AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
   all_ci_tests:
-    runs-on: ubuntu-22.04
-    needs: [tidy_and_test_matrix, integration_test_matrix]
-    if: ${{ always() }}
+    name: Required CI
+    if: ${{ always() && !cancelled() }}
+    needs: [buildifier_check, tidy_and_test_matrix, integration_test_matrix]
+    runs-on: ubuntu-slim
     steps:
-      - name: Join Jobs
-        uses: cgrindel/gha_join_jobs@605424defceef3181c9fde3df903ea8ec35e267a # v1.5.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fail if a dependency failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
