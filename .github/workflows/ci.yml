@@ -44,7 +44,7 @@ jobs:
       run: bazelisk test //...
   integration_test_matrix:
     # skip integration tests for fork PRs (secrets won't be available)
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     strategy:
       fail-fast: false
       matrix:
