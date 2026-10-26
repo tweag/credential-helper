@@ -101,11 +101,11 @@ http_file(
 )
 
 # temporarily removed until CI has required access
-# http_file(
-#     name = "hello_world_blob_storage",
-#     integrity = "sha256-yYwktnfv9Ehgr+pvSTu67FuxxMuyCcb8K7tH9m/yrTE=",
-#     urls = ["https://chsbstorage.blob.core.windows.net/gh-test-container/hello_world"],
-# )
+http_file(
+    name = "hello_world_blob_storage",
+    integrity = "sha256-geRViD7FxlM37de9EEW0/qUP7wk7QGNtlqqAAevVSRA=",
+    urls = ["https://sbgci.blob.core.windows.net/gh-test-container/hello.txt"],
+)
 
 # temporarily removed until CI has required access
 # http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
