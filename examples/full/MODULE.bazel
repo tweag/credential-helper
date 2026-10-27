@@ -59,7 +59,7 @@ use_repo(npm, "npm")
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)
 go_sdk.download(version = "1.24.2")
 
-bazel_dep(name = "rules_oci", version = "2.2.6")
+bazel_dep(name = "rules_oci", version = "2.3.0")
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
