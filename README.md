@@ -56,6 +56,7 @@ The following providers are supported as of today:
 - [Cloudflare R2](/docs/providers/r2.md)
 - [Google Cloud Storage (GCS)](/docs/providers/gcs.md)
 - [Google Artifact Registry](/docs/providers/gar.md)
+- [Google Secret Manager](/docs/providers/googlesecretmanager.md)
 - [GitHub](/docs/providers/github.md)
 - [Container Registries](/docs/providers/oci.md)
 
