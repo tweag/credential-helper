@@ -1,12 +1,10 @@
 module(
     name = "custom_example",
-    version = "0.0.0",
 )
 
 # BEGIN BAZEL_DEP
 bazel_dep(
     name = "tweag-credential-helper",
-    version = "0.0.0",
 )
 local_path_override(
     module_name = "tweag-credential-helper",
@@ -16,7 +14,6 @@ local_path_override(
 
 bazel_dep(
     name = "tweag-credential-helper-testing",
-    version = "0.0.0",
 )
 local_path_override(
     module_name = "tweag-credential-helper-testing",
