@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "chainguardapk",
+    srcs = ["chainguardapk.go"],
+    importpath = "github.com/tweag/credential-helper/authenticate/chainguardapk",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "//authenticate/internal/helperconfig",
+        "//authenticate/internal/lookupchain",
+    ],
+)
+
+go_test(
+    name = "chainguardapk_test",
+    srcs = ["chainguardapk_test.go"],
+    embed = [":chainguardapk"],
+    deps = [
+        "//api",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

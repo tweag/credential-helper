@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//api",
         "//authenticate/azstorage",
+        "//authenticate/chainguardapk",
         "//authenticate/gar",
         "//authenticate/gcs",
         "//authenticate/github",

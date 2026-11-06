@@ -3,6 +3,7 @@ package registry
 import (
 	"github.com/tweag/credential-helper/api"
 	authenticateAzStorage "github.com/tweag/credential-helper/authenticate/azstorage"
+	authenticateChainguardAPK "github.com/tweag/credential-helper/authenticate/chainguardapk"
 	authenticateGAR "github.com/tweag/credential-helper/authenticate/gar"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
@@ -14,14 +15,15 @@ import (
 
 var singleton = Helpers{
 	Map: map[string]api.Helper{
-		"gcs":        &authenticateGCS.GCS{},
-		"gar":        &authenticateGAR.GAR{},
-		"azstorage":  &authenticateAzStorage.AzStorage{},
-		"github":     &authenticateGitHub.GitHub{},
-		"null":       &authenticateNull.Null{},
-		"oci":        authenticateOCI.NewFallbackOCI(),
-		"remoteapis": &authenticateRemoteAPIs.RemoteAPIs{},
-		"s3":         &authenticateS3.S3{},
+		"chainguard-apk": &authenticateChainguardAPK.ChainguardAPK{},
+		"gcs":            &authenticateGCS.GCS{},
+		"gar":            &authenticateGAR.GAR{},
+		"azstorage":      &authenticateAzStorage.AzStorage{},
+		"github":         &authenticateGitHub.GitHub{},
+		"null":           &authenticateNull.Null{},
+		"oci":            authenticateOCI.NewFallbackOCI(),
+		"remoteapis":     &authenticateRemoteAPIs.RemoteAPIs{},
+		"s3":             &authenticateS3.S3{},
 	},
 }
 
