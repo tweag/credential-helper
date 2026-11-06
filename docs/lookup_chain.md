@@ -127,7 +127,31 @@ The Google source uses Application Default Credentials (ADC) to obtain tokens. Y
 - Workload Identity in GKE/Cloud Run
 - Other Google Cloud authentication mechanisms
 
+### Google Cloud Secret Manager Source
+
+For secrets stored in [Google Cloud Secret Manager][secret-manager]:
+
+- `.urls[].config.lookup_chain[].source`: `"gcp_secretmanager"` - Source of the secret (Google Cloud Secret Manager)
+- `.urls[].config.lookup_chain[].secret`: Fully-qualified secret version resource name, e.g. `"projects/<project>/secrets/<name>/versions/latest"`
+- `.urls[].config.lookup_chain[].binding`: Optional binding to a specific secret. If unspecified, it binds to the `"default"` secret.
+
+Example:
+```json
+{
+  "source": "gcp_secretmanager",
+  "secret": "projects/my-project/secrets/my-token/versions/latest",
+  "binding": "default"
+}
+```
+
+The Secret Manager source reads the secret payload using Application Default Credentials (ADC) when they are available.
+If ADC cannot be found, or if the ADC identity is denied access to the secret (common on GCE VMs, where the metadata server always supplies the VM's service account), the source falls back to the user credentials of the gcloud CLI (`gcloud auth login`) by invoking `gcloud auth print-access-token`.
+In the fallback case, the project that owns the secret is used as the quota project.
+The identity used needs the `roles/secretmanager.secretAccessor` role (or the `secretmanager.versions.access` permission) on the secret.
+
 ## Secret bindings
 
 In most cases, you only need a single secret to authenticate. In those cases, the `"default"` binding is used.
 For some services, multiple secrets may be needed. In those cases, the documentation of the service specifies the name and purpose of a binding.
+
+[secret-manager]: https://cloud.google.com/secret-manager/docs
