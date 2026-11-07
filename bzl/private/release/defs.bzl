@@ -11,7 +11,9 @@ GOARCH_AMD64 = "amd64"
 GOARCH_ARM64 = "arm64"
 GOARCH_RISCV64 = "riscv64"
 
-go_to_constraint_value = {
+_PLATFORM_NAME_DELIMITER = "_"
+
+LOOKUP_GO_CONSTRAINT = {
     GOOS_LINUX: "@platforms//os:linux",
     GOOS_DARWIN: "@platforms//os:macos",
     GOOS_WINDOWS: "@platforms//os:windows",
@@ -21,53 +23,27 @@ go_to_constraint_value = {
     GOARCH_RISCV64: "@platforms//cpu:riscv64",
 }
 
-_goos_list = [
-    GOOS_LINUX,
-    GOOS_DARWIN,
-    GOOS_WINDOWS,
-]
-
-# buildifier: disable=unused-variable
-_goarch_list = [
-    GOARCH_386,
-    GOARCH_AMD64,
-    GOARCH_ARM64,
-    # TODO: fix rules_go upstream:
-    # add riscv64 to BAZEL_GOARCH_CONSTRAINTS
-    GOARCH_RISCV64,
-]
-
-_os_to_arches = {
-    GOOS_LINUX: [GOARCH_386, GOARCH_AMD64, GOARCH_ARM64],
-    GOOS_DARWIN: [GOARCH_AMD64, GOARCH_ARM64],
-    GOOS_WINDOWS: [GOARCH_AMD64, GOARCH_ARM64],
-}
-
-def _generate_platforms():
-    platforms = []
-    for os in _goos_list:
-        for arch in _os_to_arches[os]:
-            platforms.append((os, arch))
-    return platforms
-
-def platform_name(tup):
-    return tup[0] + "_" + tup[1]
-
 def _parse_platform_name(name):
-    return tuple(name.split("_"))
+    return tuple(name.split(_PLATFORM_NAME_DELIMITER))
 
-PLATFORMS = _generate_platforms()
-
-_platform_names = [platform_name(platform) for platform in PLATFORMS]
+LOOKUP_PLATFORM_NAME = {
+    (os, arch): os + _PLATFORM_NAME_DELIMITER + arch
+    for os, arches in [
+        (GOOS_LINUX, [GOARCH_386, GOARCH_AMD64, GOARCH_ARM64]), 
+        (GOOS_DARWIN, [GOARCH_AMD64, GOARCH_ARM64]), 
+        (GOOS_WINDOWS, [GOARCH_AMD64, GOARCH_ARM64])
+    ]
+    for arch in arches
+}
 
 ReleasePlatformInfo = provider(doc = "Holds information about a platform configuration", fields = ["os", "arch", "platform"])
 
 def _release_platform_flag_impl(ctx):
-    tup = _parse_platform_name(ctx.build_setting_value)
-    if tup not in PLATFORMS:
-        fail("unknown release platform %s" % ctx.build_setting_value)
-
-    return ReleasePlatformInfo(os = tup[0], arch = tup[1], platform = Label(ctx.build_setting_value))
+    platform_name = ctx.build_setting_value
+    platform = _parse_platform_name(platform_name)
+    if platform not in LOOKUP_PLATFORM_NAME:
+        fail("unknown release platform %s" % platform_name)
+    return ReleasePlatformInfo(os = platform[0], arch = platform[1], platform = Label(platform_name))
 
 release_platform_flag = rule(
     implementation = _release_platform_flag_impl,
@@ -76,14 +52,14 @@ release_platform_flag = rule(
 
 def _release_platforms_transition_impl(_settings, _attr):
     return {
-        platform: {
-            "//command_line_option:platforms": str(Label(platform)),
+        platform_name: {
+            "//command_line_option:platforms": str(Label(platform_name)),
             "//command_line_option:strip": "always",
             "//command_line_option:compilation_mode": "opt",
             "@rules_go//go/config:pure": True,
-            "@tweag-credential-helper//bzl/private/release:release_platform": platform,
+            "@tweag-credential-helper//bzl/private/release:release_platform": platform_name,
         }
-        for platform in _platform_names
+        for platform_name in LOOKUP_PLATFORM_NAME.values()
     }
 
 release_platforms_transition = transition(
@@ -155,8 +131,8 @@ def _release_files(ctx):
         "tools/credential-helper.sh": EXECUTABLE_ATTRIBUTES,
     }
     distdir_contents = {}
-    for platform in _platform_names:
-        src = ctx.split_attr.executable[platform]
+    for platform_name in LOOKUP_PLATFORM_NAME.values():
+        src = ctx.split_attr.executable[platform_name]
         executable = src[DefaultInfo].files_to_run.executable
         basename = ctx.attr.basename if len(ctx.attr.basename) > 0 else executable.basename
 
@@ -164,13 +140,13 @@ def _release_files(ctx):
         dot_extension = ""
         if len(executable.extension) > 0 and not basename.endswith("." + executable.extension):
             dot_extension = "." + executable.extension
-        filename_basename = "%s_%s%s" % (basename, platform, dot_extension)
+        filename_basename = "%s_%s%s" % (basename, platform_name, dot_extension)
         filename = "bin/" + filename_basename
         dest_src_map[filename] = executable
         attributes[filename] = EXECUTABLE_ATTRIBUTES
         distdir_contents[filename_basename] = executable
-        output_group_info["%s_files" % platform] = depset([executable])
-        lockfile_args.add("--helper", "%s=%s" % (platform, executable.path))
+        output_group_info["%s_files" % platform_name] = depset([executable])
+        lockfile_args.add("--helper", "%s=%s" % (platform_name, executable.path))
     lockfile = ctx.actions.declare_file("%s_lockfile.json" % ctx.attr.name)
     lockfile_args.add(lockfile)
     ctx.actions.run(
@@ -407,9 +383,10 @@ def _do_a_release_impl(ctx):
         target_file = ctx.file.script,
         is_executable = True,
     )
+    version_number = ctx.attr.version[ModuleVersionInfo].version
     env = {
-        "EXPECTED_RELEASE_TAG": "v" + ctx.attr.version[ModuleVersionInfo].version,
-        "MODULE_VERSION": ctx.attr.version[ModuleVersionInfo].version,
+        "EXPECTED_RELEASE_TAG": "v" + version_number,
+        "MODULE_VERSION": version_number,
         "DIST_TAR": ctx.file.dist_tar.short_path,
     }
     inherited_environment = ["GH_TOKEN", "GITHUB_TOKEN"]
