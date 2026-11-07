@@ -2,10 +2,7 @@
 set -euo pipefail
 
 TAG=$1
-# The prefix is chosen to match what GitHub generates for source archives
-PREFIX="credential-helper-${TAG:1}"
-ARCHIVE="credential-helper-${TAG:1}.tar.gz"
-git archive --format=tar.gz --prefix="${PREFIX}/" -o $ARCHIVE HEAD
+bazel run //bzl/private/release:do_a_release -- $TAG
 
 # Emit the release notes stored in the intermediate file, 
 # which will have been extracted by the markdown-extract workflow

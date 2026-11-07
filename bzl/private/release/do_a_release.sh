@@ -45,8 +45,10 @@ tar -xvf "${DIST_TAR}" -C "${workdir}"
 
 assets=$(find "${workdir}" -type f)
 
-gh release create \
-  --draft \
-  --target "${commit}" \
-  "${tag}" \
-  $assets
+# gh release create \
+#   --draft \
+#   --target "${commit}" \
+#   "${tag}" \
+#   $assets
+
+# TODO: assets need to be listed as release_files in release.yml
