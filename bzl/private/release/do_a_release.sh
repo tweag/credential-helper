@@ -2,21 +2,25 @@
 set -eo pipefail
 set -o errtrace
 
+print_usage() {
+    echo "Usage: bazel run //bzl/private/release:do_a_release -- <RELEASE_TAG>" 1>&2
+}
+
 if [ -z "$BUILD_WORKSPACE_DIRECTORY" ]; then
     echo "DO NOT RUN THIS SCRIPT OUTSIDE BAZEL!" 1>&2
-    echo "Usage: bazel run //bzl/private/release:do_a_release -- <RELEASE_TAG>" 1>&2
+    print_usage
     exit 1
 fi
 
 if [ $# -ne 1 ]; then
-    echo "Usage: bazel run //bzl/private/release:do_a_release -- <RELEASE_TAG>" 1>&2
+    print_usage
     exit 1
 fi
 
 if [ "$1" != "$EXPECTED_RELEASE_TAG" ]; then
     echo "User supplied release tag (${1}) does not match tag deduced from Bazel module version (${EXPECTED_RELEASE_TAG})" 1>&2
     echo "Update and commit a different module version (in MODULE.bazel), if you are doing a release." 1>&2
-    echo "Usage: bazel run //bzl/private/release:do_a_release -- <RELEASE_TAG>" 1>&2
+    print_usage
     exit 1
 fi
 
