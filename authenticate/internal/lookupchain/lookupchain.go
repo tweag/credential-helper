@@ -540,8 +540,23 @@ func (g *GCPSecretManager) SetupInstructions(binding string) (string, bool) {
 const cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"
 
 func accessGCPSecret(ctx context.Context, name string) (string, error) {
-	_, adcErr := gauth.FindDefaultCredentials(ctx, cloudPlatformScope)
+	creds, err := gauth.FindDefaultCredentials(ctx, cloudPlatformScope)
+	adcErr := checkADCUsable(creds, err)
 	return accessGCPSecretWithFallback(ctx, name, adcErr, &gcloudCLITokenSource{}, accessGCPSecretAs)
+}
+
+// checkADCUsable reports whether Application Default Credentials can actually
+// mint a token. Finding them is not enough: on GCE FindDefaultCredentials
+// succeeds without contacting the metadata server, so an environment that
+// blocks the metadata server would otherwise only surface as a failed RPC.
+func checkADCUsable(creds *gauth.Credentials, findErr error) error {
+	if findErr != nil {
+		return findErr
+	}
+	if _, err := creds.TokenSource.Token(); err != nil {
+		return fmt.Errorf("minting access token from Application Default Credentials: %w", err)
+	}
+	return nil
 }
 
 // accessGCPSecretWithFallback accesses the secret with Application Default
@@ -549,14 +564,17 @@ func accessGCPSecret(ctx context.Context, name string) (string, error) {
 // source (backed by `gcloud auth login`) when ADC is unavailable — or when
 // ADC resolves to an identity that is denied access to the secret, which is
 // the norm on GCE machines where the metadata server always supplies the
-// VM's service account.
+// VM's service account, or that fails to authenticate at all.
 func accessGCPSecretWithFallback(ctx context.Context, name string, adcErr error, fallback oauth2.TokenSource, access func(context.Context, string, gcpSecretAuth) (string, error)) (string, error) {
 	auth, err := chooseGCPSecretAuth(ctx, name, adcErr, fallback)
 	if err != nil {
 		return "", err
 	}
 	payload, err := access(ctx, name, auth)
-	if err == nil || !auth.useADC || status.Code(err) != codes.PermissionDenied {
+	if err == nil || !auth.useADC {
+		return payload, err
+	}
+	if code := status.Code(err); code != codes.PermissionDenied && code != codes.Unauthenticated {
 		return payload, err
 	}
 	auth, retryErr := chooseGCPSecretAuth(ctx, name, err, fallback)
@@ -565,7 +583,7 @@ func accessGCPSecretWithFallback(ctx context.Context, name string, adcErr error,
 	}
 	payload, retryErr = access(ctx, name, auth)
 	if retryErr != nil {
-		return "", fmt.Errorf("with gcloud CLI credentials after ADC identity was denied (%v): %w", err, retryErr)
+		return "", fmt.Errorf("with gcloud CLI credentials after ADC access failed (%v): %w", err, retryErr)
 	}
 	return payload, nil
 }

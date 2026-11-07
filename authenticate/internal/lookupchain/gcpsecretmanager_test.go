@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
+	gauth "golang.org/x/oauth2/google"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -251,6 +252,30 @@ func TestChooseGCPSecretAuth(t *testing.T) {
 	})
 }
 
+func TestCheckADCUsable(t *testing.T) {
+	t.Run("returns the lookup error", func(t *testing.T) {
+		findErr := errors.New("google: could not find default credentials")
+		if err := checkADCUsable(nil, findErr); !errors.Is(err, findErr) {
+			t.Errorf("checkADCUsable() error = %v, want %v", err, findErr)
+		}
+	})
+
+	t.Run("accepts credentials that mint a token", func(t *testing.T) {
+		creds := &gauth.Credentials{TokenSource: oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "adc-token"})}
+		if err := checkADCUsable(creds, nil); err != nil {
+			t.Errorf("checkADCUsable() unexpected error: %v", err)
+		}
+	})
+
+	t.Run("rejects credentials that cannot mint a token", func(t *testing.T) {
+		mintErr := errors.New("dial tcp 169.254.169.254:80: connect: network is unreachable")
+		creds := &gauth.Credentials{TokenSource: &failingTokenSource{err: mintErr}}
+		if err := checkADCUsable(creds, nil); !errors.Is(err, mintErr) {
+			t.Errorf("checkADCUsable() error = %v, want %v", err, mintErr)
+		}
+	})
+}
+
 func TestAccessGCPSecretWithFallback(t *testing.T) {
 	const secretName = "projects/example-project/secrets/my-secret/versions/latest"
 	ctx := context.Background()
@@ -302,6 +327,50 @@ func TestAccessGCPSecretWithFallback(t *testing.T) {
 		}
 		if diff := cmp.Diff("example-project", calls[1].quotaProject); diff != "" {
 			t.Errorf("fallback quota project mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("retries with gcloud CLI credentials when ADC cannot authenticate", func(t *testing.T) {
+		fallback := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "gcloud-user-token"})
+		unauthErr := status.Error(codes.Unauthenticated, `transport: per-RPC creds failed due to error: credentials: cannot fetch token: Get "http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token": dial tcp 169.254.169.254:80: connect: network is unreachable`)
+		var calls []gcpSecretAuth
+		got, err := accessGCPSecretWithFallback(ctx, secretName, nil, fallback, func(_ context.Context, _ string, auth gcpSecretAuth) (string, error) {
+			calls = append(calls, auth)
+			if auth.useADC {
+				return "", unauthErr
+			}
+			return "gcloud-payload", nil
+		})
+		if err != nil {
+			t.Fatalf("accessGCPSecretWithFallback() unexpected error: %v", err)
+		}
+		if got != "gcloud-payload" {
+			t.Errorf("payload = %q, want %q", got, "gcloud-payload")
+		}
+		if len(calls) != 2 || !calls[0].useADC || calls[1].useADC {
+			t.Fatalf("calls = %+v, want ADC access followed by fallback access", calls)
+		}
+	})
+
+	t.Run("uses gcloud CLI credentials when the ADC token cannot be minted", func(t *testing.T) {
+		fallback := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "gcloud-user-token"})
+		creds := &gauth.Credentials{TokenSource: &failingTokenSource{err: errors.New("dial tcp 169.254.169.254:80: connect: network is unreachable")}}
+		var calls []gcpSecretAuth
+		got, err := accessGCPSecretWithFallback(ctx, secretName, checkADCUsable(creds, nil), fallback, func(_ context.Context, _ string, auth gcpSecretAuth) (string, error) {
+			calls = append(calls, auth)
+			if auth.useADC {
+				return "", errors.New("ADC must not be used")
+			}
+			return "gcloud-payload", nil
+		})
+		if err != nil {
+			t.Fatalf("accessGCPSecretWithFallback() unexpected error: %v", err)
+		}
+		if got != "gcloud-payload" {
+			t.Errorf("payload = %q, want %q", got, "gcloud-payload")
+		}
+		if len(calls) != 1 || calls[0].useADC {
+			t.Errorf("calls = %+v, want exactly one fallback access", calls)
 		}
 	})
 
