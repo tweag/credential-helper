@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "artifactkeeper",
+    srcs = ["artifactkeeper.go"],
+    importpath = "github.com/tweag/credential-helper/authenticate/artifactkeeper",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "//authenticate/internal/helperconfig",
+        "//authenticate/internal/lookupchain",
+    ],
+)
+
+go_test(
+    name = "artifactkeeper_test",
+    srcs = ["artifactkeeper_test.go"],
+    embed = [":artifactkeeper"],
+    deps = [
+        "//api",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

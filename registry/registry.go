@@ -2,6 +2,7 @@ package registry
 
 import (
 	"github.com/tweag/credential-helper/api"
+	authenticateArtifactKeeper "github.com/tweag/credential-helper/authenticate/artifactkeeper"
 	authenticateAzStorage "github.com/tweag/credential-helper/authenticate/azstorage"
 	authenticateGAR "github.com/tweag/credential-helper/authenticate/gar"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
@@ -14,14 +15,15 @@ import (
 
 var singleton = Helpers{
 	Map: map[string]api.Helper{
-		"gcs":        &authenticateGCS.GCS{},
-		"gar":        &authenticateGAR.GAR{},
-		"azstorage":  &authenticateAzStorage.AzStorage{},
-		"github":     &authenticateGitHub.GitHub{},
-		"null":       &authenticateNull.Null{},
-		"oci":        authenticateOCI.NewFallbackOCI(),
-		"remoteapis": &authenticateRemoteAPIs.RemoteAPIs{},
-		"s3":         &authenticateS3.S3{},
+		"artifact-keeper": &authenticateArtifactKeeper.ArtifactKeeper{},
+		"gcs":             &authenticateGCS.GCS{},
+		"gar":             &authenticateGAR.GAR{},
+		"azstorage":       &authenticateAzStorage.AzStorage{},
+		"github":          &authenticateGitHub.GitHub{},
+		"null":            &authenticateNull.Null{},
+		"oci":             authenticateOCI.NewFallbackOCI(),
+		"remoteapis":      &authenticateRemoteAPIs.RemoteAPIs{},
+		"s3":              &authenticateS3.S3{},
 	},
 }
 

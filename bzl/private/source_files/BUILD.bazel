@@ -5,6 +5,7 @@ release_files = [
     "//agent/internal/lockfile:all_files",
     "//agent/locate:all_files",
     "//api:all_files",
+    "//authenticate/artifactkeeper:all_files",
     "//authenticate/gcs:all_files",
     "//authenticate/gar:all_files",
     "//authenticate/azstorage:all_files",
