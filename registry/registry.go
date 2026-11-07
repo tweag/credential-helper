@@ -15,15 +15,16 @@ import (
 
 var singleton = Helpers{
 	Map: map[string]api.Helper{
-		"chainguard-apk": &authenticateChainguardAPK.ChainguardAPK{},
-		"gcs":            &authenticateGCS.GCS{},
-		"gar":            &authenticateGAR.GAR{},
-		"azstorage":      &authenticateAzStorage.AzStorage{},
-		"github":         &authenticateGitHub.GitHub{},
-		"null":           &authenticateNull.Null{},
-		"oci":            authenticateOCI.NewFallbackOCI(),
-		"remoteapis":     &authenticateRemoteAPIs.RemoteAPIs{},
-		"s3":             &authenticateS3.S3{},
+		"chainguard-apk":       &authenticateChainguardAPK.ChainguardAPK{},
+		"chainguard-libraries": authenticateChainguardAPK.NewLibraries(),
+		"gcs":                  &authenticateGCS.GCS{},
+		"gar":                  &authenticateGAR.GAR{},
+		"azstorage":            &authenticateAzStorage.AzStorage{},
+		"github":               &authenticateGitHub.GitHub{},
+		"null":                 &authenticateNull.Null{},
+		"oci":                  authenticateOCI.NewFallbackOCI(),
+		"remoteapis":           &authenticateRemoteAPIs.RemoteAPIs{},
+		"s3":                   &authenticateS3.S3{},
 	},
 }
 

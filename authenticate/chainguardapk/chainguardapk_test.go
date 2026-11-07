@@ -78,6 +78,90 @@ func TestChainguardAPKResolverGet(t *testing.T) {
 	}
 }
 
+func TestChainguardLibrariesResolverGet(t *testing.T) {
+	const cred = "0123456789abcdef0123456789abcdef01234567/89abcdef01234567:tok123"
+	r := &ChainguardAPKResolver{
+		host:       NewLibraries().host,
+		credential: func(context.Context) (string, error) { return cred, nil },
+	}
+	for _, uri := range []string{
+		"https://libraries.cgr.dev/javascript/picocolors/-/picocolors-1.1.1.tgz",
+		"https://libraries.cgr.dev/javascript-upstream/@scope/pkg/-/pkg-1.0.0.tgz",
+	} {
+		resp, err := r.Get(context.Background(), api.GetCredentialsRequest{URI: uri})
+		if err != nil {
+			t.Fatalf("Get(%q) returned unexpected error: %v", uri, err)
+		}
+		if diff := cmp.Diff(basicHeader(cred), resp.Headers); diff != "" {
+			t.Errorf("Get(%q) headers mismatch (-want +got):\n%s", uri, diff)
+		}
+	}
+	// The libraries credential must never be sent to the apk host, or the
+	// reverse.
+	for _, uri := range []string{
+		"https://apk.cgr.dev/example-org/x86_64/foo.apk",
+		"https://example.com/javascript/x.tgz",
+	} {
+		if _, err := r.Get(context.Background(), api.GetCredentialsRequest{URI: uri}); err == nil {
+			t.Errorf("Get(%q) = nil error, want error", uri)
+		}
+	}
+	apk := &ChainguardAPKResolver{credential: func(context.Context) (string, error) { return cred, nil }}
+	if _, err := apk.Get(context.Background(), api.GetCredentialsRequest{URI: "https://libraries.cgr.dev/javascript/x.tgz"}); err == nil {
+		t.Error("apk resolver accepted libraries.cgr.dev, want error")
+	}
+}
+
+func TestChainguardResolversReadTheirOwnEnv(t *testing.T) {
+	t.Setenv("CGR_APK_CREDENTIAL", "apk-id:apk-token")
+	t.Setenv("CGR_LIBRARIES_CREDENTIAL", "lib-id:lib-token")
+	for _, tt := range []struct {
+		helper *ChainguardAPK
+		uri    string
+		want   string
+	}{
+		{&ChainguardAPK{}, "https://apk.cgr.dev/o/x86_64/foo.apk", "apk-id:apk-token"},
+		{NewLibraries(), "https://libraries.cgr.dev/javascript/x.tgz", "lib-id:lib-token"},
+	} {
+		res, err := tt.helper.Resolver(context.Background())
+		if err != nil {
+			t.Fatalf("Resolver() error: %v", err)
+		}
+		resp, err := res.Get(context.Background(), api.GetCredentialsRequest{URI: tt.uri})
+		if err != nil {
+			t.Fatalf("Get(%q) error: %v", tt.uri, err)
+		}
+		if diff := cmp.Diff(basicHeader(tt.want), resp.Headers); diff != "" {
+			t.Errorf("Get(%q) headers mismatch (-want +got):\n%s", tt.uri, diff)
+		}
+	}
+}
+
+// Each libraries.cgr.dev repository takes its own pull token, so cached
+// credentials are keyed by repository as well as host.
+func TestChainguardLibrariesCacheKey(t *testing.T) {
+	tests := []struct {
+		name string
+		uri  string
+		want string
+	}{
+		{name: "javascript", uri: "https://libraries.cgr.dev/javascript/picocolors/-/picocolors-1.1.1.tgz", want: "libraries.cgr.dev/javascript"},
+		{name: "javascript upstream", uri: "https://libraries.cgr.dev/javascript-upstream/x/-/x-1.0.0.tgz", want: "libraries.cgr.dev/javascript-upstream"},
+		{name: "java", uri: "https://libraries.cgr.dev/java/com/google/guava/guava/33.0.0-jre/guava-33.0.0-jre.jar", want: "libraries.cgr.dev/java"},
+		{name: "go", uri: "https://libraries.cgr.dev/go/golang.org/x/text/@v/v0.20.0.zip", want: "libraries.cgr.dev/go"},
+		{name: "empty on unparseable uri", uri: "://not-a-url", want: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewLibraries().CacheKey(api.GetCredentialsRequest{URI: tt.uri})
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("CacheKey(%q) mismatch (-want +got):\n%s", tt.uri, diff)
+			}
+		})
+	}
+}
+
 func TestChainguardAPKCacheKey(t *testing.T) {
 	tests := []struct {
 		name string

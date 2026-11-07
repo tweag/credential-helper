@@ -59,6 +59,7 @@ The following providers are supported as of today:
 - [GitHub](/docs/providers/github.md)
 - [Container Registries](/docs/providers/oci.md)
 - [Chainguard apk Repositories](/docs/providers/chainguard-apk.md)
+- [Chainguard Libraries](/docs/providers/chainguard-libraries.md)
 
 ## Installation and usage
 

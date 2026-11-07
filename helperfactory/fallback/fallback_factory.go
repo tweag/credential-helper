@@ -44,6 +44,8 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		return &authenticateAzStorage.AzStorage{}, nil
 	case strings.EqualFold(u.Hostname(), "apk.cgr.dev"):
 		return &authenticateChainguardAPK.ChainguardAPK{}, nil
+	case strings.EqualFold(u.Hostname(), "libraries.cgr.dev"):
+		return authenticateChainguardAPK.NewLibraries(), nil
 	// container registries using the default OCI resolver
 	case strings.HasSuffix(u.Hostname(), ".app.snowflake.com"):
 		fallthrough
