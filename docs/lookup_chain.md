@@ -145,7 +145,7 @@ Example:
 ```
 
 The Secret Manager source reads the secret payload using Application Default Credentials (ADC) when they are available.
-If ADC cannot be found, or if the ADC identity is denied access to the secret (common on GCE VMs, where the metadata server always supplies the VM's service account), the source falls back to the user credentials of the gcloud CLI (`gcloud auth login`) by invoking `gcloud auth print-access-token`.
+If ADC cannot be found or cannot mint a token (for example when the metadata server is unreachable), or if the ADC identity is denied access to the secret or fails to authenticate (common on GCE VMs, where the metadata server always supplies the VM's service account), the source falls back to the user credentials of the gcloud CLI (`gcloud auth login`) by invoking `gcloud auth print-access-token`.
 In the fallback case, the project that owns the secret is used as the quota project.
 The identity used needs the `roles/secretmanager.secretAccessor` role (or the `secretmanager.versions.access` permission) on the secret.
 
