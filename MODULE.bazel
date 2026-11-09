@@ -62,7 +62,7 @@ bazel_binaries.download(version = "9.3.2")
 use_repo(bazel_binaries, "bazel_binaries", "bazel_binaries_bazelisk", "build_bazel_bazel_7_7_2", "build_bazel_bazel_8_8_2", "build_bazel_bazel_9_3_2")
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)
-go_sdk.download(version = "1.24.2")
+go_sdk.download(version = "1.26.10")
 
 module_version = use_extension("//bzl/private/config:defs.bzl", "module_version", dev_dependency = True)
 use_repo(module_version, "tweag-credential-helper-version")
