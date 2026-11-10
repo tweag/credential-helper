@@ -28,6 +28,9 @@ jobs:
         repo_name: credential-helper
     - name: Run buildifier
       run: bazelisk run //util:buildifier.check
+    - name: Ensure update deleted packages works
+      run: bazelisk run @rules_bazel_integration_test//tools:update_deleted_packages
+
   tidy_and_test_matrix:
     strategy:
       fail-fast: false
