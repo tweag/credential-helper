@@ -58,6 +58,7 @@ The following providers are supported as of today:
 - [Google Artifact Registry](/docs/providers/gar.md)
 - [GitHub](/docs/providers/github.md)
 - [Container Registries](/docs/providers/oci.md)
+- [Static HTTP credentials](/docs/providers/http.md) (Artifactory, Nexus, Artifact Keeper, Chainguard apk and Libraries, ...)
 
 ## Installation and usage
 
