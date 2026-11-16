@@ -56,7 +56,6 @@ versioned_filename_info(
     src = ":src_tar",
     extension = "tar.gz",
     tags = ["manual"],
-    destdir = "src",
 )
 
 offline_bcr(
