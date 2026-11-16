@@ -32,6 +32,9 @@ bazel_integration_tests(
         "CREDENTIAL_HELPER_LOGGING": "debug",
         "GO_HTTPBIN_RLOCATION_PATH": "$(rlocationpath //bzl/private/httpbin:httpbin)",
     },
+    tags = integration_test_utils.DEFAULT_INTEGRATION_TEST_TAGS + [
+        "requires-network",
+    ],
     test_runner = "//bzl/private/integration_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("full") +
                       integration_test_utils.glob_workspace_files("testing") + [
@@ -51,6 +54,9 @@ bazel_integration_tests(
         "BAZEL_INTEGRATION_TEST_INSTALL_TARGET": "//:custom_installer",
         "GO_HTTPBIN_RLOCATION_PATH": "$(rlocationpath //bzl/private/httpbin:httpbin)",
     },
+    tags = integration_test_utils.DEFAULT_INTEGRATION_TEST_TAGS + [
+        "requires-network",
+    ],
     test_runner = "//bzl/private/integration_test_runner",
     workspace_files = integration_test_utils.glob_workspace_files("customized") +
                       integration_test_utils.glob_workspace_files("testing") + [

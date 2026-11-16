@@ -1,6 +1,9 @@
 name: Continuous Integration
 
 on:
+  merge_group:
+    branches:
+      - main
   pull_request:
   push:
     branches:
@@ -25,6 +28,9 @@ jobs:
         repo_name: credential-helper
     - name: Run buildifier
       run: bazelisk run //util:buildifier.check
+    - name: Ensure update deleted packages works
+      run: bazelisk run @rules_bazel_integration_test//tools:update_deleted_packages
+
   tidy_and_test_matrix:
     strategy:
       fail-fast: false
@@ -35,7 +41,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Setup Bazel
-      uses: bazel-contrib/setup-bazel@104e3eea9447cdaa4b00d0fb46191a3985d26ab3 # 0.19.1
+      uses: bazel-contrib/setup-bazel@f34d6a05eae3c24acab7fa54587492daeaeffdab # 0.19.2
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
@@ -43,6 +49,16 @@ jobs:
     - name: Execute Tests
       run: bazelisk test //...
   integration_test_matrix:
+    # Run only when GitHub Actions secrets should be available: not for
+    # Dependabot-triggered runs and not for PRs from forks.
+    if: >-
+      ${{
+        github.actor != 'dependabot[bot]' &&
+        (
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        )
+      }}
     strategy:
       fail-fast: false
       matrix:
@@ -91,11 +107,11 @@ jobs:
         AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
   all_ci_tests:
-    runs-on: ubuntu-24.04
-    needs: [tidy_and_test_matrix, integration_test_matrix]
-    if: ${{ always() }}
+    name: Required CI
+    if: ${{ always() && !cancelled() }}
+    needs: [buildifier_check, tidy_and_test_matrix, integration_test_matrix]
+    runs-on: ubuntu-slim
     steps:
-      - name: Join Jobs
-        uses: cgrindel/gha_join_jobs@605424defceef3181c9fde3df903ea8ec35e267a # v1.5.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fail if a dependency failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
