@@ -9,6 +9,7 @@ import (
 	authenticateGAR "github.com/tweag/credential-helper/authenticate/gar"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
+	authenticateHTTP "github.com/tweag/credential-helper/authenticate/httpauth"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
 	authenticateOCI "github.com/tweag/credential-helper/authenticate/oci"
 	authenticateRemoteAPIs "github.com/tweag/credential-helper/authenticate/remoteapis"
@@ -41,6 +42,11 @@ func FallbackHelperFactory(rawURL string) (api.Helper, error) {
 		return &authenticateGAR.GAR{}, nil
 	case strings.HasSuffix(u.Hostname(), "blob.core.windows.net"):
 		return &authenticateAzStorage.AzStorage{}, nil
+	// Chainguard's apk and Libraries repositories: static pull-token credentials
+	case strings.EqualFold(u.Hostname(), "apk.cgr.dev"):
+		fallthrough
+	case strings.EqualFold(u.Hostname(), "libraries.cgr.dev"):
+		return &authenticateHTTP.HTTP{}, nil
 	// container registries using the default OCI resolver
 	case strings.HasSuffix(u.Hostname(), ".app.snowflake.com"):
 		fallthrough
