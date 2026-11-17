@@ -9,7 +9,7 @@ if [ -z "$BUILD_WORKSPACE_DIRECTORY" ]; then
     exit 1
 fi
 
-git describe --exact-match --tags HEAD 2>/dev/null && error_code=$? || error_code=$? 
+git describe --exact-match --tags HEAD 1>/dev/null 2>/dev/null && error_code=$? || error_code=$? 
 if [ "${error_code}" -ne 0 ]; then
     echo "Current commit is not a tag. Aborting." 1>&2
     exit 1
