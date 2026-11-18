@@ -1,4 +1,7 @@
-{ pkgs ? import ./nixpkgs.nix {} }:
+{ 
+  pkgs ? import ./nixpkgs.nix {},
+  handyTools ? true, 
+}:
 
 with pkgs;
 
@@ -9,8 +12,6 @@ mkShell {
     bazel-buildtools
     git
     gh
-    # convenience dependencies
-    less
-    which
-  ];
+  ] ++ 
+  (if handyTools then [ less which ] else []);
 }
