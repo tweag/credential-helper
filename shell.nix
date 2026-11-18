@@ -5,6 +5,7 @@ with pkgs;
 mkShell {
   buildInputs = [
     bazel_7
+    bazelisk
     bazel-buildtools
     git
     gh
