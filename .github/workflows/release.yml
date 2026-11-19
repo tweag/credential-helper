@@ -27,32 +27,19 @@ jobs:
   release:
     name: Prepare Release
     needs: check_version
-    # https://github.com/bazel-contrib/.github/blob/master/.github/workflows/release_ruleset.yaml
-    uses: vreuter/.github/.github/workflows/release_ruleset.yaml@vr/markdown-extract
+    uses: bazel-contrib/.github/.github/workflows/release_ruleset.yaml@v7.7.0
     with:
       tag_name: v${{ inputs.version }}
       # Support GitHub immutable releases.
       draft: true
       prerelease: false
-      release_files: tweag-credential-helper-*.tar.gz
-      # Use markdown-extract to pull release notes from the changelog, 
-      # and store in the given file before emission to stdout for release_ruleset.
-      use_changelog_release_notes: true
-      changelog_file: CHANGELOG.md
-      release_notes_intermediate_file: release_notes_from_changelog.md
+      release_files: dist/**/*
   publish:
     name: Make draft release
     needs: release
     uses: ./.github/workflows/publish.yml
     with:
       tag_name: v${{ inputs.version }}
+      release_artifacts_run_id: ${{ github.run_id }}
     secrets:
       publish_token: ${{ secrets.BCR_PUBLISH_TOKEN }}
-  finalize:
-    name: Publish release to BCR
-    needs: publish
-    runs-on: ubuntu-latest
-    steps:
-      - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
-        with:
-          tag_name: v${{ inputs.version }}
