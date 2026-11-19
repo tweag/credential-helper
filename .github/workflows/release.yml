@@ -27,19 +27,13 @@ jobs:
   release:
     name: Prepare Release
     needs: check_version
-    # https://github.com/bazel-contrib/.github/blob/master/.github/workflows/release_ruleset.yaml
-    uses: vreuter/.github/.github/workflows/release_ruleset.yaml@vr/markdown-extract
+    uses: bazel-contrib/.github/.github/workflows/release_ruleset.yaml@v7.7.0
     with:
       tag_name: v${{ inputs.version }}
       # Support GitHub immutable releases.
       draft: true
       prerelease: false
       release_files: dist/**/*
-      # Use markdown-extract to pull release notes from the changelog, 
-      # and store in the given file before emission to stdout for release_ruleset.
-      use_changelog_release_notes: true
-      changelog_file: CHANGELOG.md
-      release_notes_intermediate_file: release_notes_from_changelog.md
   publish:
     name: Make draft release
     needs: release
