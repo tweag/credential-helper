@@ -120,7 +120,7 @@ func (g *RemoteAPIs) Get(ctx context.Context, req api.GetCredentialsRequest) (ap
 	headerName := cfg.HeaderName
 	secretEncoding := func(secret string) string {
 		// by default, the secret is directly used as a header value
-		return secret
+		return cfg.HeaderPrefix + secret
 	}
 	switch cfg.AuthMethod {
 	case "header":
@@ -160,6 +160,11 @@ type configFragment struct {
 	AuthMethod string `json:"auth_method"`
 	// HeaderName is the name of the header to set the secret in.
 	HeaderName string `json:"header_name"`
+	// HeaderPrefix is prepended to the secret in the header value when
+	// auth_method is "header". It is ignored for other auth methods. The
+	// empty default preserves the historical behavior of sending the secret
+	// verbatim. Common values include "Bearer " and "Token ".
+	HeaderPrefix string `json:"header_prefix"`
 	// LookupChain defines the order in which secrets are looked up from sources.
 	// Each element is a string that identifies a secret source.
 	// It defaults to the sources "env", "keyring".
