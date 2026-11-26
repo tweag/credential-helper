@@ -9,6 +9,7 @@ release_files = [
     "//authenticate/gar:all_files",
     "//authenticate/azstorage:all_files",
     "//authenticate/github:all_files",
+    "//authenticate/httpauth:all_files",
     "//authenticate/internal:all_files",
     "//authenticate/internal/helperconfig:all_files",
     "//authenticate/internal/lookupchain:all_files",

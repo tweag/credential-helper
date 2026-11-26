@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "httpauth",
+    srcs = ["httpauth.go"],
+    importpath = "github.com/tweag/credential-helper/authenticate/httpauth",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api",
+        "//authenticate/internal/helperconfig",
+        "//authenticate/internal/lookupchain",
+    ],
+)
+
+go_test(
+    name = "httpauth_test",
+    srcs = ["httpauth_test.go"],
+    embed = [":httpauth"],
+    deps = [
+        "//api",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

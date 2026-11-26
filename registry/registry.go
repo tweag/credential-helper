@@ -6,6 +6,7 @@ import (
 	authenticateGAR "github.com/tweag/credential-helper/authenticate/gar"
 	authenticateGCS "github.com/tweag/credential-helper/authenticate/gcs"
 	authenticateGitHub "github.com/tweag/credential-helper/authenticate/github"
+	authenticateHTTP "github.com/tweag/credential-helper/authenticate/httpauth"
 	authenticateNull "github.com/tweag/credential-helper/authenticate/null"
 	authenticateOCI "github.com/tweag/credential-helper/authenticate/oci"
 	authenticateRemoteAPIs "github.com/tweag/credential-helper/authenticate/remoteapis"
@@ -18,6 +19,7 @@ var singleton = Helpers{
 		"gar":        &authenticateGAR.GAR{},
 		"azstorage":  &authenticateAzStorage.AzStorage{},
 		"github":     &authenticateGitHub.GitHub{},
+		"http":       &authenticateHTTP.HTTP{},
 		"null":       &authenticateNull.Null{},
 		"oci":        authenticateOCI.NewFallbackOCI(),
 		"remoteapis": &authenticateRemoteAPIs.RemoteAPIs{},
